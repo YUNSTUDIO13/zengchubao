@@ -18,8 +18,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,9 +41,8 @@ private val CN_INT = NumberFormat.getNumberInstance(Locale.CHINA).apply { minimu
 private fun fmtI(v: Double) = "¥${CN_INT.format(v)}"
 private fun fmtD(v: Double) = CN.format(v)
 
-// ── 首页（精确对标参考图） ──
+// ── 首页（1:1 精细复刻） ──
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     deposits: List<Deposit>,
@@ -53,12 +55,9 @@ fun HomeScreen(
     }
 
     val bankNames = remember(holdingDeposits) { holdingDeposits.map { it.bankName }.distinct() }
-    // 银行多选（空集合 = 全部银行）
     var selectedBanks by remember { mutableStateOf<Set<String>>(emptySet()) }
-    // 时间筛选：全部 / 本月到期 / 本年到期
     var timeFilter by remember { mutableIntStateOf(0) } // 0=全部, 1=本月, 2=本年
 
-    // 银行筛选后的列表（未加时间筛选）
     val bankFiltered = remember(holdingDeposits, selectedBanks) {
         if (selectedBanks.isEmpty()) holdingDeposits
         else holdingDeposits.filter { it.bankName in selectedBanks }
@@ -83,7 +82,6 @@ fun HomeScreen(
         bankFiltered.sumOf { calculateAccruedInterest(it.principal, it.annualRate, it.startDate, it.termDays) }
     }
 
-    // 页面可见/切回前台时自动刷新（倒计时、归档状态每日更新）
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -95,56 +93,89 @@ fun HomeScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF4F6FB))) {
         // ── 顶部标题栏 ──
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 18.dp, end = 14.dp, top = 12.dp, bottom = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text("增储宝", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
-                Text("存单全生命周期管理", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                Text("增储宝", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B), lineHeight = 19.sp)
+                Spacer(Modifier.height(2.dp))
+                Text("存单全生命周期管理", fontSize = 10.sp, lineHeight = 10.sp, color = Color(0xFF94A3B8))
             }
             Box(contentAlignment = Alignment.Center,
-                modifier = Modifier.padding(top = 8.dp).size(36.dp)
+                modifier = Modifier.size(36.dp)
                     .shadow(3.dp, CircleShape, ambientColor = Color(0x1A000000))
-                    .clip(CircleShape).background(Color.White)
-                    .border(1.5.dp, Color(0xFF2563EB), CircleShape)
+                    .clip(CircleShape).background(Color(0xFF1E293B))
                     .clickable { onNewDeposit() }) {
-                Icon(Icons.Filled.Add, "新建", tint = Color(0xFF2563EB), modifier = Modifier.size(18.dp))
+                Icon(Icons.Filled.Add, "新建", tint = Color.White, modifier = Modifier.size(18.dp))
             }
         }
 
         LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 90.dp)) {
-            // ── Hero 卡片（对标参考图：紧凑，大金额字） ──
+            // ── Hero 卡片 ──
             item {
-                Box(modifier = Modifier.padding(horizontal = 18.dp).fillMaxWidth()
-                    .clip(RoundedCornerShape(22.dp)).heroGradient()
-                    .padding(top = 11.dp, bottom = 13.dp, start = 18.dp, end = 18.dp)) {
+                Box(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp).fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp)).heroGradient()
+                    .padding(20.dp)) {
                     Column {
-                        Text("全部持有", fontSize = 9.sp, fontWeight = FontWeight.W500,
-                            color = Color(0xFFBFDBFE))
+                        Text("全部持有", fontSize = 11.sp, fontWeight = FontWeight.W500,
+                            color = Color(0x73FFFFFF))
                         Spacer(Modifier.height(4.dp))
-                        Text(fmtI(assetBalance), fontSize = 32.sp, fontWeight = FontWeight.Bold,
-                            color = Color.White, lineHeight = 34.sp)
-                        Spacer(Modifier.height(6.dp))
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text("¥", fontSize = 14.sp, fontWeight = FontWeight.Light,
+                                color = Color(0xFFE8B254), modifier = Modifier.padding(bottom = 6.dp))
+                            Text(CN_INT.format(assetBalance), fontSize = 42.sp, fontWeight = FontWeight.ExtraBold,
+                                color = Color.White, letterSpacing = (-1).sp)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        HorizontalDivider(thickness = 1.dp, color = Color(0x1AFFFFFF))
+                        Spacer(Modifier.height(4.dp))
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            HeroMetric("% 综合年化", "${"%.2f".format(weightedRate)}%", Modifier.weight(1f))
-                            HeroMetric("今年预估收益", fmtD(annualExpectedYield), Modifier.weight(1f))
+                            HeroMetric("综合年化%", "${"%.2f".format(weightedRate)}%", Modifier.weight(1f))
+                            HeroMetric("今年预估收益", fmtI(annualExpectedYield), Modifier.weight(1f))
                             HeroMetric("持有中累计收益", fmtI(holdingTotalYield), Modifier.weight(1f))
                         }
                     }
                 }
             }
 
-            item { Spacer(Modifier.height(8.dp)) }
+            item { Spacer(Modifier.height(10.dp)) }
 
-            // ── 银行筛选 Chips（"全部银行"单选，其他银行多选） ──
+            // ── 统计小卡片（上版本 UI：标题上，数值下） ──
+            item {
+                val today = todayString()
+                val currentMonth = today.take(7)
+                val currentYear = today.take(4)
+                val monthCount = remember(bankFiltered) {
+                    bankFiltered.count { it.endDate.startsWith(currentMonth) }
+                }
+                val yearCount = remember(bankFiltered) {
+                    bankFiltered.count { it.endDate.startsWith(currentYear) }
+                }
+                Row(modifier = Modifier.padding(start = 18.dp, end = 18.dp).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StatMiniCard("全部", "${bankFiltered.size}",
+                        selected = timeFilter == 0, modifier = Modifier.weight(1f),
+                        onClick = { timeFilter = 0 })
+                    StatMiniCard("本月到期", "$monthCount",
+                        selected = timeFilter == 1, modifier = Modifier.weight(1f),
+                        textColor = Color(0xFF9499B8), onClick = { timeFilter = 1 })
+                    StatMiniCard("本年到期", "$yearCount",
+                        selected = timeFilter == 2, modifier = Modifier.weight(1f),
+                        textColor = Color(0xFFC8953A), onClick = { timeFilter = 2 })
+                }
+            }
+
+            item { Spacer(Modifier.height(9.dp)) }
+
+            // ── 银行筛选 Chips ──
             item {
                 Row(modifier = Modifier.padding(horizontal = 18.dp).horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    PillChip("全部银行", selectedBanks.isEmpty()) { selectedBanks = emptySet() }
+                    PillChip("全部", selectedBanks.isEmpty()) { selectedBanks = emptySet() }
                     bankNames.forEach { bank ->
                         val sel = bank in selectedBanks
                         PillChip(bank, sel) {
@@ -156,33 +187,6 @@ fun HomeScreen(
 
             item { Spacer(Modifier.height(9.dp)) }
 
-            // ── 统计小卡片（与银行筛选联动） ──
-            item {
-                val today = todayString()
-                val currentMonth = today.take(7)
-                val currentYear = today.take(4)
-                val monthCount = remember(bankFiltered) {
-                    bankFiltered.count { it.endDate.startsWith(currentMonth) }
-                }
-                val yearCount = remember(bankFiltered) {
-                    bankFiltered.count { it.endDate.startsWith(currentYear) }
-                }
-                Row(modifier = Modifier.padding(horizontal = 18.dp).fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatMiniCard("全部", "${bankFiltered.size} 笔",
-                        selected = timeFilter == 0, modifier = Modifier.weight(1f),
-                        onClick = { timeFilter = 0 })
-                    StatMiniCard("本月到期", "$monthCount 笔",
-                        selected = timeFilter == 1, modifier = Modifier.weight(1f),
-                        textColor = Color(0xFFF59E0B), onClick = { timeFilter = 1 })
-                    StatMiniCard("本年到期", "$yearCount 笔",
-                        selected = timeFilter == 2, modifier = Modifier.weight(1f),
-                        textColor = Color(0xFF10B981), onClick = { timeFilter = 2 })
-                }
-            }
-
-            item { Spacer(Modifier.height(10.dp)) }
-
             // ── 持有列表标题 ──
             item {
                 Text("持有列表", fontSize = 15.sp, fontWeight = FontWeight.Bold,
@@ -191,7 +195,7 @@ fun HomeScreen(
 
             item { Spacer(Modifier.height(8.dp)) }
 
-            // ── 存单列表 / 空状态（对标参考图卡片结构） ──
+            // ── 存单列表 / 空状态 ──
             if (filteredList.isEmpty()) {
                 item {
                     Column(modifier = Modifier.fillMaxWidth().padding(top = 44.dp),
@@ -211,63 +215,55 @@ fun HomeScreen(
     }
 }
 
-// ── Hero 指标（紧凑间距） ──
+// ── Hero 指标（值 12sp / 标签 8sp，间距 2dp） ──
 
 @Composable
-private fun HeroMetric(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        Text(label, fontSize = 8.sp, fontWeight = FontWeight.W500,
-            color = Color(0xFFBFDBFE).copy(alpha = 0.75f), lineHeight = 9.sp)
-        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold,
+private fun HeroMetric(label: String, value: String, modifier: Modifier = Modifier,
+                       horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally) {
+    Column(modifier = modifier, horizontalAlignment = horizontalAlignment) {
+        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Bold,
             color = Color.White, lineHeight = 14.sp)
+        Spacer(Modifier.height(2.dp))
+        Text(label, fontSize = 8.sp, fontWeight = FontWeight.W400,
+            color = Color(0x59FFFFFF), lineHeight = 9.sp, letterSpacing = 0.3.sp)
     }
 }
 
-// ── 药丸 Chip（对标参考图：圆角胶囊+边框） ──
+// ── 药丸 Chip ──
 
 @Composable
 fun PillChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = RoundedCornerShape(16.dp),
-        color = if (selected) Color(0xFFEFF6FF) else Color.White,
-        border = BorderStroke(if (selected) 1.2.dp else 0.6.dp,
-            if (selected) Color(0xFF2563EB) else Color(0xFFE2E8F0)),
+    Surface(onClick = onClick, shape = RoundedCornerShape(22.dp),
+        color = if (selected) Color(0xFF1E293B) else Color.White,
+        border = BorderStroke(if (selected) 1.dp else 0.6.dp,
+            if (selected) Color(0xFF1E293B) else Color(0xFFE2E8F0)),
         shadowElevation = 0.dp) {
         Text(label, fontSize = 11.sp, fontWeight = FontWeight.W600,
-            color = if (selected) Color(0xFF2563EB) else Color(0xFF64748B),
+            color = if (selected) Color.White else Color(0xFF64748B),
             modifier = Modifier.padding(horizontal = 13.dp, vertical = 5.dp))
     }
 }
 
-// ── 统计小卡片（可选中+点击） ──
+// ── 统计小卡片（居中，内边距 2dp） ──
 
 @Composable
-private fun StatMiniCard(title: String, value: String, selected: Boolean = false, textColor: Color = Color(0xFF1E293B), modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+private fun StatMiniCard(title: String, value: String, selected: Boolean = false,
+    textColor: Color = Color(0xFF0E1B4D), modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     val borderColor = if (selected) Color(0xFF2563EB) else Color.Transparent
     Card(modifier = modifier, shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.2.dp, if (borderColor != Color.Transparent) borderColor else Color(0xFFE2E8F0)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
+        border = BorderStroke(1.dp, if (borderColor != Color.Transparent) borderColor else Color(0x120E1B4D)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         onClick = onClick ?: {}) {
-        Column(Modifier.padding(vertical = 5.dp, horizontal = 8.dp)) {
-            Text(title, fontSize = 8.sp, fontWeight = FontWeight.W500, color = Color(0xFF94A3B8),
-                lineHeight = 10.sp)
-            Text(value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = textColor,
-                lineHeight = 18.sp)
+        Column(Modifier.padding(2.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(value, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = textColor, lineHeight = 22.sp)
+            Text(title, fontSize = 9.sp, fontWeight = FontWeight.W500, color = Color(0xFF9499B8), lineHeight = 9.sp)
         }
     }
 }
 
-// ═════════════════════════ 存单卡片（v1.13 精确对标用户截图反馈） ═════════════════════════
-//
-// 卡片三层结构：
-//   L1: 银行名(大圆角灰badge) + 起始日期 + [即将到期](条件性大圆角badge)  |  CNY(右)
-//   L2: 存单名称(粗体左)         | 本金(粗体右，紧靠右边缘)
-//   L3: 年利率 X.XX%(灰左)      | 到期 YYYY-MM-DD(右，颜色按状态) + N天后到期
-//
-// 间距规范：
-//   - MiniBadge圆角: 大圆角(RoundedCornerShape)
-//   - 本金必须右对齐（Column+Alignment.End）
-// ════════════════════════════════════════════════════════════════════════
+// ═════════════════════════ 存单卡片 ═════════════════════════
 
 @Composable
 fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -275,65 +271,65 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
     val isExpired = deposit.status == DepositStatus.MATURED || remainingDays < 0
     val isExpiringSoon = remainingDays in 1..30
 
-    // 到期颜色
     val dateColor = when {
         isExpired -> Color(0xFFF87171)
         isExpiringSoon -> Color(0xFFF59E0B)
         else -> Color(0xFF94A3B8)
     }
+    val rateColor = rateColorFor(deposit.annualRate)
 
     Card(onClick = onClick, modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)) {
 
-        Column(
-            Modifier.fillMaxSize()
-                .padding(start = 10.dp, end = 10.dp, top = 6.dp, bottom = 6.dp)
-        ) {
+        Column(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 8.dp)) {
 
-            // ══ L1: 银行名(badge,大圆角) + 起始日 + [即将到期](条件,badge) | CNY(右) ══
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    // 银行名 badge — 大圆角
-                    MiniBadge(deposit.bankName, bg = Color(0xFFF1F5F9), fg = Color(0xFF64748B))
-                    // 存入日期
-                    Text("存入 ${deposit.startDate}", fontSize = 9.sp,
-                        color = Color(0xFF94A3B8))
+            // ══ 图标 + 产品名/本金（同一行）+ 银行/日期 ══
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                BankFirstCharIcon(deposit.bankName)
+                Spacer(Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    // L1: 产品名 + Badge + 本金（同一水平线）
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text(deposit.productName, fontSize = 13.sp, fontWeight = FontWeight.W600,
+                                color = Color(0xFF1E293B), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false))
+                            if (isExpiringSoon) {
+                                MiniBadge("即将到期", bg = Color(0xFFFEF3C7), fg = Color(0xFFD97706))
+                            }
+                        }
+                        Spacer(Modifier.width(6.dp))
+                        Text(CN_INT.format(deposit.principal), fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                    }
+                    // L2: 银行名称 | 日期范围（右对齐）
+                    Row(modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(deposit.bankName, fontSize = 10.sp, color = Color(0xFF94A3B8))
+                        Text("${deposit.startDate} ～ ${deposit.endDate}", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                    }
                 }
-                Text("CNY", fontSize = 9.sp, fontWeight = FontWeight.W600, color = Color(0xFFCBD5E1))
             }
 
-            // ══ L2: 存单名称(左,粗体) | 本金(粗体,右对齐) ══
+            // ══ 利率图标 + 利率 + 到期日 + 倒计时 ══
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Text(deposit.productName, fontSize = 14.sp, fontWeight = FontWeight.W600,
-                    color = Color(0xFF1E293B), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f))
-                Text(CN_INT.format(deposit.principal), fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
-            }
-
-            // ══ L3: 年利率(左) + 到期日(中) + xxx天后到期(右对齐) ══
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("${"%.2f".format(deposit.annualRate)}%",
-                        fontSize = 10.sp, color = Color(0xFF94A3B8))
-                    Text("到期 ${deposit.endDate}", fontSize = 10.sp,
-                        fontWeight = FontWeight.W500, color = dateColor)
+                    RateIcon(rate = deposit.annualRate, modifier = Modifier.size(18.dp))
+                    Text("${"%.2f".format(deposit.annualRate)}%", fontSize = 14.sp,
+                        fontWeight = FontWeight.W600, color = rateColor)
+                    Text("年化利率", fontSize = 10.sp, color = Color(0xFF94A3B8))
                 }
                 val countdownText = when {
                     isExpired -> "已过期${-remainingDays}天"
@@ -347,34 +343,109 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
     }
 }
 
-// ── 迷你 Badge（银行名/状态用，大圆角） ──
+// ── 银行首字图标 ──
+
+@Composable
+private fun BankFirstCharIcon(bankName: String) {
+    val char = bankName.take(1).ifEmpty { "?" }
+    Box(
+        modifier = Modifier.size(40.dp)
+            .clip(CircleShape)
+            .background(Color(0xFFDBEAFE))
+            .border(1.5.dp, Color(0xFFBFDBFE), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(char, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB))
+    }
+}
+
+// ── 迷你 Badge ──
 
 @Composable
 private fun MiniBadge(text: String, bg: Color, fg: Color) {
     Surface(shape = RoundedCornerShape(20.dp), color = bg) {
         Text(text, fontSize = 9.sp, fontWeight = FontWeight.W500, color = fg,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 0.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
             lineHeight = 11.sp)
     }
 }
 
-// ── Hero 渐变 + 光晕气泡 ──
+// ── 动态利率图标 ──
+
+@Composable
+private fun RateIcon(rate: Double, modifier: Modifier = Modifier) {
+    val color = rateColorFor(rate)
+    val sweep = ((rate / 5.0).coerceIn(0.0, 1.0) * 360).toFloat()
+    Canvas(modifier = modifier) {
+        val strokeWidth = 3.dp.toPx()
+        val diameter = size.minDimension
+        val radius = (diameter - strokeWidth) / 2
+        val center = Offset(size.width / 2, size.height / 2)
+
+        drawCircle(
+            color = color.copy(alpha = 0.12f),
+            radius = radius,
+            center = center,
+            style = Stroke(width = strokeWidth)
+        )
+
+        drawArc(
+            color = color,
+            startAngle = -90f,
+            sweepAngle = sweep,
+            useCenter = false,
+            topLeft = Offset(center.x - radius, center.y - radius),
+            size = Size(radius * 2, radius * 2),
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+        )
+    }
+}
+
+private fun rateColorFor(rate: Double): Color = when {
+    rate >= 3.0 -> Color(0xFFD4A853)
+    rate >= 2.0 -> Color(0xFFE8C070)
+    rate >= 1.0 -> Color(0xFFF59E0B)
+    else -> Color(0xFF94A3B8)
+}
+
+// ── Hero 渐变 + 装饰图形 ──
 
 fun Modifier.heroGradient() = this.then(
     Modifier.drawBehind {
+        // Figma: linear-gradient(145deg, #0E1B4D 0%, #1A2F7A 55%, #0E1B4D 100%)
         drawRect(brush = Brush.linearGradient(
-            colors = listOf(Color(0xFF1A2F7A), Color(0xFF2E58DB), Color(0xFF4338CA)),
+            colors = listOf(Color(0xFF0E1B4D), Color(0xFF1A2F7A), Color(0xFF0E1B4D)),
             start = Offset(0f, this.size.height), end = Offset(this.size.width, 0f)))
-        drawCircle(brush = Brush.radialGradient(
-            colors = listOf(Color(0x4D8BAFFF), Color(0x008BAFFF)),
-            center = Offset(this.size.width * 0.78f, this.size.height * 0.22f),
-            radius = this.size.width * 0.45f),
-            radius = this.size.width * 0.45f,
-            center = Offset(this.size.width * 0.78f, this.size.height * 0.22f))
-        drawCircle(brush = Brush.radialGradient(
-            colors = listOf(Color(0x3DA78BFA), Color(0x00A78BFA)),
-            center = Offset(this.size.width * 0.85f, this.size.height * 0.72f),
-            radius = this.size.width * 0.35f),
-            radius = this.size.width * 0.35f,
-            center = Offset(this.size.width * 0.85f, this.size.height * 0.72f))
+
+        // 右上白色大圆 rgba(255,255,255,0.04), 160x160, top:-40 right:-30
+        val w = this.size.width
+        val h = this.size.height
+        drawCircle(
+            color = Color(0x0AFFFFFF),
+            radius = w * 0.22f,
+            center = Offset(w * 1.06f, -w * 0.02f))
+
+        // 右下金色圆 rgba(200,149,58,0.08), 120x120, bottom:-50 right:40
+        drawCircle(
+            color = Color(0x1AC8953A),
+            radius = w * 0.16f,
+            center = Offset(w * 0.76f, h * 0.95f))
+
+        // Figma 金色弧线：r=32 stroke 1.5 dasharray 60 140 rotate(-60)
+        val cx = w * 0.82f
+        val cy = h * 0.35f
+        val arcR = w * 0.09f
+        drawCircle(
+            color = Color(0x40C8953A),
+            radius = arcR,
+            center = Offset(cx, cy),
+            style = Stroke(width = 1.2.dp.toPx()))
+        drawArc(
+            color = Color(0x80C8953A),
+            startAngle = 30f,
+            sweepAngle = 108f,
+            useCenter = false,
+            topLeft = Offset(cx - arcR, cy - arcR),
+            size = Size(arcR * 2, arcR * 2),
+            style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round))
     })

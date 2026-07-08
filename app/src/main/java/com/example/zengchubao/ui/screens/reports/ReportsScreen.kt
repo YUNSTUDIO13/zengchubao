@@ -160,12 +160,12 @@ private fun AssetOverviewSection(
                 AssetField("持有本金", fmt(totalDeposited), Modifier.weight(1f))
                 AssetField("资产余额", fmt(assetBalance), Modifier.weight(1f))
             }
-            Spacer(Modifier.height(1.dp))
+            Spacer(Modifier.height(3.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(1.dp)) {
                 AssetField("日收益率", "¥$rateText", Modifier.weight(1f))
                 AssetField("预期年度收益", fmt(annualExpected), Modifier.weight(1f))
             }
-            Spacer(Modifier.height(1.dp))
+            Spacer(Modifier.height(3.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(1.dp)) {
                 AssetField("到期总收益", fmt(totalYield), Modifier.weight(1f))
                 AssetField("综合年化率", "${"%.2f".format(weightedRate)}%", Modifier.weight(1f))
@@ -221,10 +221,10 @@ private fun AssetCategorySection(
 ) {
     SectionCard("资产分类明细") {
         Row(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-            Text("类型", Modifier.weight(1f), fontSize = 10.sp, fontWeight = FontWeight.W600, color = Color(0xFF94A3B8))
-            Text("余额", Modifier.weight(1f), fontSize = 10.sp, fontWeight = FontWeight.W600, color = Color(0xFF94A3B8), textAlign = TextAlign.End)
-            Text("占比", Modifier.weight(0.8f), fontSize = 10.sp, fontWeight = FontWeight.W600, color = Color(0xFF94A3B8), textAlign = TextAlign.End)
-            Text("笔数", Modifier.weight(0.6f), fontSize = 10.sp, fontWeight = FontWeight.W600, color = Color(0xFF94A3B8), textAlign = TextAlign.End)
+            Text("类型", Modifier.weight(1f), fontSize = 10.sp, fontWeight = FontWeight.W600, color = Color(0xFF94A3B8), textAlign = TextAlign.Center)
+            Text("余额", Modifier.weight(1f), fontSize = 10.sp, fontWeight = FontWeight.W600, color = Color(0xFF94A3B8), textAlign = TextAlign.Center)
+            Text("占比", Modifier.weight(0.8f), fontSize = 10.sp, fontWeight = FontWeight.W600, color = Color(0xFF94A3B8), textAlign = TextAlign.Center)
+            Text("笔数", Modifier.weight(0.6f), fontSize = 10.sp, fontWeight = FontWeight.W600, color = Color(0xFF94A3B8), textAlign = TextAlign.Center)
         }
         HorizontalDivider(color = Color(0xFFF8FAFC))
         bankGroups.forEachIndexed { i, (bank, bal, deps) ->
@@ -233,14 +233,15 @@ private fun AssetCategorySection(
                 Modifier.fillMaxWidth().padding(vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center) {
                     Box(Modifier.size(8.dp).background(bankColorMap[bank] ?: Color(0xFFCBD5E1), CircleShape))
                     Spacer(Modifier.width(6.dp))
                     Text(bank, fontSize = 11.sp, color = Color(0xFF475569))
                 }
-                Text(fmt(bal), Modifier.weight(1f), fontSize = 11.sp, fontWeight = FontWeight.W600, color = Color(0xFF334155), textAlign = TextAlign.End)
-                Text("${"%.1f".format(pct)}%", Modifier.weight(0.8f), fontSize = 11.sp, color = Color(0xFF94A3B8), textAlign = TextAlign.End)
-                Text("${deps.size}笔", Modifier.weight(0.6f), fontSize = 11.sp, color = Color(0xFF94A3B8), textAlign = TextAlign.End)
+                Text(fmt(bal), Modifier.weight(1f), fontSize = 11.sp, fontWeight = FontWeight.W600, color = Color(0xFF334155), textAlign = TextAlign.Center)
+                Text("${"%.1f".format(pct)}%", Modifier.weight(0.8f), fontSize = 11.sp, color = Color(0xFF94A3B8), textAlign = TextAlign.Center)
+                Text("${deps.size}笔", Modifier.weight(0.6f), fontSize = 11.sp, color = Color(0xFF94A3B8), textAlign = TextAlign.Center)
             }
             if (i < bankGroups.size - 1) HorizontalDivider(color = Color(0xFFF8FAFC))
         }
@@ -255,7 +256,7 @@ private fun AssetField(label: String, value: String, modifier: Modifier = Modifi
         shape = RoundedCornerShape(10.dp),
         color = Color(0xFFF8FAFC)
     ) {
-        Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+        Column(Modifier.padding(3.dp)) {
             Text(label, fontSize = 9.sp, fontWeight = FontWeight.W500, color = Color(0xFF94A3B8), lineHeight = 10.sp)
             Text(value, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B), lineHeight = 14.sp)
         }
