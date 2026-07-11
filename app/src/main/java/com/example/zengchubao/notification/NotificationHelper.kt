@@ -61,22 +61,8 @@ object NotificationHelper {
             android.os.Handler(context.mainLooper).post {
                 Toast.makeText(context, "已设置 ${count} 个到期提醒", Toast.LENGTH_SHORT).show()
             }
-            // 立即发送测试通知验证通道正常
-            postTestNotification(context)
         }
         return count
-    }
-
-    private fun postTestNotification(context: Context) {
-        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.notify(-1, NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("增储宝")
-            .setContentText("通知通道正常，到期提醒已启用")
-            .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .build()
-        )
     }
 
     private fun scheduleOne(
