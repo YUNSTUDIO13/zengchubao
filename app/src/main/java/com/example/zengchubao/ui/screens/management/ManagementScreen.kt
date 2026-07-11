@@ -416,7 +416,13 @@ private fun ReminderSettingsScreen(onBack: () -> Unit, settings: AppSettings, on
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { /* 授权后不需要额外操作 */ }
+    ) { granted ->
+        if (granted) {
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                com.example.zengchubao.notification.NotificationHelper.scheduleAll(context, settings)
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         if (!hasNotificationPermission) {
