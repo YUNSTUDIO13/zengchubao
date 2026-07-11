@@ -352,7 +352,7 @@ private fun DonutChartWithLabels(
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text("资产总额", fontSize = 8.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.W500)
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
             Text(fmt(totalBalance), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
         }
     }
@@ -395,7 +395,7 @@ private fun DonutLabels(
             val labelText = "$name $pct%"
             val labelPaint = android.graphics.Paint().apply {
                 this.color = android.graphics.Color.parseColor("#475569")
-                textSize = 5.sp.toPx()
+                textSize = 6.sp.toPx()
                 isAntiAlias = true
             }
             val lx = cx + (lineEnd + labelGap) * cosR
