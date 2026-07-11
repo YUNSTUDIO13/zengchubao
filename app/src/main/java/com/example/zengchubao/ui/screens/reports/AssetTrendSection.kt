@@ -210,13 +210,14 @@ private fun TrendSegmented(
     onSelect: (Int) -> Unit
 ) {
     val density = androidx.compose.ui.platform.LocalDensity.current
-    val itemWidth = 58.dp
+    val itemWidth = 56.dp
     val indicatorHeight = 24.dp
     val inset = 2.dp
-    val containerWidth = itemWidth * options.size
+    val containerWidth = itemWidth * options.size + inset * 2
     val itemWidthPx = with(density) { itemWidth.toPx() }
     val insetPx = with(density) { inset.toPx() }
     val innerH = indicatorHeight - inset * 2
+    val innerW = itemWidth
     val animOffset by androidx.compose.animation.core.animateFloatAsState(
         targetValue = selectedIndex * itemWidthPx,
         animationSpec = androidx.compose.animation.core.tween(220),
@@ -228,11 +229,11 @@ private fun TrendSegmented(
             .height(indicatorHeight)
             .background(Color(0xFFF1F5F9), RoundedCornerShape(999.dp))
     ) {
-        // 滑动指示器（与文字同宽，按比例上下缩进）
+        // 滑动指示器：左右各 inset 边距，与外框比例一致
         Box(
             modifier = Modifier
                 .offset { androidx.compose.ui.unit.IntOffset((animOffset + insetPx).toInt(), insetPx.toInt()) }
-                .width(itemWidth)
+                .width(innerW)
                 .height(innerH)
                 .background(Color.White, RoundedCornerShape(999.dp))
         )
