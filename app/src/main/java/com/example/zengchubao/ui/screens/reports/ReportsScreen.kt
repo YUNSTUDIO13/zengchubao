@@ -304,124 +304,100 @@ private fun DonutChartWithLabels(
 ) {
     val animProgress by animateFloatAsState(
         targetValue = if (showAnim) 1f else 1f,
-        animationSpec = tween(800),
-        label = "donutAnim"
+        animationSpec = tween(800), label = "donutAnim"
     )
     val density = LocalDensity.current
-    val outerR = with(density) { 65.dp.toPx() }
-    val strokeW = outerR * 0.36f
-    val innerR = outerR - strokeW
-    val radialExt = with(density) { 12.dp.toPx() }
-    val horizExt = with(density) { 26.dp.toPx() }
+    val radius = with(density) { 65.dp.toPx() }          // 圆环半径
+    val strokeWidth = radius * 0.36f                      // 环宽
+    val innerR = radius - strokeWidth
+    val lineExtension1 = with(density) { 12.dp.toPx() }   // 段1 径向延伸
+    val lineExtension2 = with(density) { 26.dp.toPx() }   // 段2 水平延伸
 
     Canvas(modifier = Modifier.fillMaxSize()) {
         val cx = size.width / 2f; val cy = size.height / 2f
         val total = items.sumOf { it.second }
         if (total <= 0) return@Canvas
+        val nc = drawContext.canvas.nativeCanvas
 
         // ── 1. 圆环 ──
         var startAngle = -90f
         items.forEach { (_, value, color) ->
             val sweep = ((value / total * 360f).coerceAtLeast(1.5)).toFloat()
             drawArc(color, startAngle, sweep * animProgress, false,
-                Offset(cx - outerR, cy - outerR), Size(outerR * 2, outerR * 2),
-                style = Stroke(strokeW, cap = StrokeCap.Butt))
+                Offset(cx - radius, cy - radius), Size(radius * 2, radius * 2),
+                style = Stroke(strokeWidth, cap = StrokeCap.Butt))
             startAngle += sweep
         }
         drawCircle(Color.White, innerR, Offset(cx, cy))
-    }
 
-    // 中心文字用 Compose Text 叠放（v3.39 风格）
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                fmt(totalBalance),
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1E293B),
-                lineHeight = 11.sp
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "资产总额",
-                fontSize = 8.sp,
-                color = Color(0xFF94A3B8),
-                fontWeight = FontWeight.W500,
-                lineHeight = 10.sp
-            )
-        }
-    }
-
-    // 折线 + 标签（独立 Canvas）
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val cx = size.width / 2f; val cy = size.height / 2f
-        val total = items.sumOf { it.second }
-        if (total <= 0) return@Canvas
-        val nc = drawContext.canvas.nativeCanvas
-        val ringOuterR = outerR + with(density) { 4.dp.toPx() }
-        val occupiedYs = mutableListOf<Pair<Float, Float>>()
-        val staggerH = with(density) { 12.sp.toPx() }
-        val rowGap = with(density) { 2.dp.toPx() }
-        val margin = with(density) { 4.dp.toPx() }
-        val labelGapR = with(density) { 12.dp.toPx() }
-
+        // ── 2. 折线 + 标签（严格照参考代码）──
         var start = -90f
         items.forEach { (name, value, color) ->
             val sweep = ((value / total * 360f).coerceAtLeast(1.5)).toFloat()
-            val mid = start + sweep / 2f
-            val rad = Math.toRadians(mid.toDouble()).toFloat()
+            val midAngle = start + sweep / 2f
+            val rad = Math.toRadians(midAngle.toDouble()).toFloat()
             val cosR = cos(rad); val sinR = sin(rad)
             val pct = "%.1f".format(value / total * 100)
 
-            val sR = ringOuterR
-            val sx = cx + sR * cosR; val sy = cy + sR * sinR
-            val bR = sR + radialExt
-            val bx = cx + bR * cosR; val by = cy + bR * sinR
-            val isRight = cosR > 0
-            val ex = if (isRight) bx + horizExt else bx - horizExt
+            // 起点: 环外边缘 + 4dp 间隙
+            val lineStartRadius = radius + strokeWidth / 2f + with(density) { 4.dp.toPx() }
+            val startX = cx + lineStartRadius * cosR
+            val startY = cy + lineStartRadius * sinR
 
-            val path = Path().apply { moveTo(sx, sy); lineTo(bx, by); lineTo(ex, by) }
+            // 拐点: 径向延伸 lineExtension1
+            val breakRadius = lineStartRadius + lineExtension1
+            val breakX = cx + breakRadius * cosR
+            val breakY = cy + breakRadius * sinR
+
+            // 终点: 水平延伸 lineExtension2
+            val isRightSide = cosR > 0
+            val endX = if (isRightSide) breakX + lineExtension2 else breakX - lineExtension2
+            val endY = breakY
+
+            // 绘制折线 Path
+            val path = Path().apply {
+                moveTo(startX, startY)
+                lineTo(breakX, breakY)
+                lineTo(endX, endY)
+            }
             drawPath(path, color.copy(alpha = 0.6f), style = Stroke(2f))
 
-            var adjustedY = by
-            for ((lo, hi) in occupiedYs) {
-                if (kotlin.math.abs(adjustedY - lo) < staggerH || kotlin.math.abs(adjustedY - hi) < staggerH) {
-                    adjustedY = hi + staggerH + rowGap
-                }
-            }
-            val lineH = with(density) { 10.sp.toPx() }
-            occupiedYs.add(adjustedY - lineH * 0.3f to adjustedY + lineH * 1.7f + rowGap)
-
-            val labelAnchorX = cx + (ringOuterR + labelGapR) * cosR
-
+            // 文字 Paint（照参考代码 textAlign）
             val nameP = android.graphics.Paint().apply {
                 this.color = android.graphics.Color.parseColor("#475569")
                 textSize = 7.sp.toPx()
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
                 isAntiAlias = true
-                textAlign = if (isRight) android.graphics.Paint.Align.LEFT
+                textAlign = if (isRightSide) android.graphics.Paint.Align.LEFT
                            else android.graphics.Paint.Align.RIGHT
             }
             val pctP = android.graphics.Paint().apply {
                 this.color = android.graphics.Color.parseColor("#94A3B8")
                 textSize = 7.sp.toPx()
                 isAntiAlias = true
-                textAlign = if (isRight) android.graphics.Paint.Align.LEFT
+                textAlign = if (isRightSide) android.graphics.Paint.Align.LEFT
                            else android.graphics.Paint.Align.RIGHT
             }
-            // (includeFontPadding not directly settable on Android Paint; rely on lineHeight)
 
-            val nameW = nameP.measureText(name)
-            val pctW = pctP.measureText("$pct%")
-            val lineW = maxOf(nameW, pctW)
-            val tx = if (isRight) {
-                (labelAnchorX + margin).coerceAtMost(size.width - lineW - margin)
-            } else {
-                (labelAnchorX - margin).coerceAtLeast(lineW + margin)
-            }
-            nc.drawText(name, tx, adjustedY, nameP)
-            nc.drawText("$pct%", tx, adjustedY + lineH + rowGap, pctP)
+            // 标签锚点 = 段2 终点 ± 15px / Y 偏移 10px（参考代码）
+            val textX = if (isRightSide) endX + 15f else endX - 15f
+            val textY1 = endY + 4f  // 银行名顶部基线
+            val textY2 = textY1 + nameP.textSize * 1.6f  // 占比行 距 银行名
+
+            nc.drawText(name, textX, textY1, nameP)
+            nc.drawText("$pct%", textX, textY2, pctP)
             start += sweep
+        }
+    }
+
+    // 中心文字（Compose Text 叠放）
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(fmt(totalBalance), fontSize = 9.sp, fontWeight = FontWeight.Bold,
+                color = Color(0xFF1E293B), lineHeight = 11.sp)
+            Spacer(Modifier.height(6.dp))
+            Text("资产总额", fontSize = 8.sp, color = Color(0xFF94A3B8),
+                fontWeight = FontWeight.W500, lineHeight = 10.sp)
         }
     }
 }
