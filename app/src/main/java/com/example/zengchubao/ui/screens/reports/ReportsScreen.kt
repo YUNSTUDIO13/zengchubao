@@ -19,6 +19,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -300,82 +301,100 @@ private fun DonutChartWithLabels(
     totalBalance: Double,
     showAnim: Boolean
 ) {
-    val density = LocalDensity.current
     val animProgress by animateFloatAsState(
         targetValue = if (showAnim) 1f else 1f,
         animationSpec = tween(800),
         label = "donutAnim"
     )
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val viewW = constraints.maxWidth.toFloat()
-        val viewH = constraints.maxHeight.toFloat()
-        val cx = viewW / 2f
-        val cy = viewH / 2f
-        val outerR = with(density) { 60.dp.toPx() }
+    val density = LocalDensity.current
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val w = size.width
+        val h = size.height
+        val cx = w / 2f
+        val cy = h / 2f
+        val outerR = 72.dp.toPx()
         val strokeW = outerR * 0.32f
         val innerR = outerR - strokeW
-        val lineStartR = outerR + 4f
-        val lineEndR = outerR + 56f
-        val labelR = lineEndR + 10f
+        val lineStartR = outerR + 6f
+        val lineEndR = outerR + 72f
 
         val total = items.sumOf { it.second }
-        if (total <= 0) return@BoxWithConstraints
+        if (total <= 0) return@Canvas
 
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            var startAngle = -90f
-            val segs = mutableListOf<Triple<Float, Float, Color>>()
-            items.forEach { (_, value, color) ->
-                val sweep = ((value / total * 360f).coerceAtLeast(1.5)).toFloat()
-                drawArc(color, startAngle, sweep * animProgress, false,
-                    Offset(cx - outerR, cy - outerR), Size(outerR * 2, outerR * 2),
-                    style = Stroke(strokeW, cap = StrokeCap.Butt))
-                segs.add(Triple(startAngle + sweep / 2f, sweep, color))
-                startAngle += sweep
-            }
-            // 拉线
-            segs.forEach { (mid, _, color) ->
-                val rad = Math.toRadians(mid.toDouble()).toFloat()
-                drawLine(color,
-                    Offset(cx + lineStartR * cos(rad), cy + lineStartR * sin(rad)),
-                    Offset(cx + lineEndR * cos(rad), cy + lineEndR * sin(rad)),
-                    strokeWidth = 1.2f)
-            }
-            drawCircle(Color.White, innerR, Offset(cx, cy))
+        // ── 1. 画圆环 ──
+        var startAngle = -90f
+        val segs = mutableListOf<Triple<Float, Float, Color>>()
+        items.forEach { (_, value, color) ->
+            val sweep = ((value / total * 360f).coerceAtLeast(1.5)).toFloat()
+            drawArc(color, startAngle, sweep * animProgress, false,
+                Offset(cx - outerR, cy - outerR), Size(outerR * 2, outerR * 2),
+                style = Stroke(strokeW, cap = StrokeCap.Butt))
+            segs.add(Triple(startAngle + sweep / 2f, sweep, color))
+            startAngle += sweep
         }
 
-        // 中心文字（资产总额与值间距 6dp）
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("资产总额", fontSize = 6.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.W500)
-                Spacer(Modifier.height(6.dp))
-                Text(fmt(totalBalance), fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
-            }
-        }
+        // ── 2. 画中心白圆 ──
+        drawCircle(Color.White, innerR, Offset(cx, cy))
 
-        // 标签：银行名 + 占比（间距 3dp）换行展示
+        // ── 3. 画中心文字 ──
+        val nativeCanvas = drawContext.canvas.nativeCanvas
+        val centerTextPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.parseColor("#1E293B")
+            textSize = 8.sp.toPx()
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            isAntiAlias = true
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
+        val subTextPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.parseColor("#94A3B8")
+            textSize = 6.sp.toPx()
+            isAntiAlias = true
+            textAlign = android.graphics.Paint.Align.CENTER
+        }
+        nativeCanvas.drawText("资产总额", cx, cy - 6f, subTextPaint)
+        nativeCanvas.drawText(fmt(totalBalance), cx, cy + 14f, centerTextPaint)
+
+        // ── 4. 画拉线 + 标签 ──
         var start = -90f
-        items.forEach { (name, value, _) ->
+        items.forEach { (name, value, color) ->
             val sweep = ((value / total * 360f).coerceAtLeast(1.5)).toFloat()
             val mid = start + sweep / 2f
             val rad = Math.toRadians(mid.toDouble()).toFloat()
-            val lx = cx + labelR * cos(rad)
-            val ly = cy + labelR * sin(rad)
-            val pct = value / total * 100
-            val isLeft = cos(rad) < 0
-            val xDp = with(density) { (lx / density.density).dp }
-            val yDp = with(density) { (ly / density.density).dp - 14.dp }
+            val cosR = cos(rad); val sinR = sin(rad)
+            val sx = cx + lineStartR * cosR; val sy = cy + lineStartR * sinR
+            val ex = cx + lineEndR * cosR; val ey = cy + lineEndR * sinR
 
-            Column(
-                modifier = Modifier.offset(
-                    x = if (isLeft) xDp - 56.dp else xDp - 4.dp,
-                    y = yDp
-                )
-            ) {
-                Text(name, fontSize = 8.sp, color = Color(0xFF475569), fontWeight = FontWeight.W500)
-                Spacer(Modifier.height(3.dp))
-                Text("${"%.1f".format(pct)}%", fontSize = 8.sp, color = Color(0xFF475569), fontWeight = FontWeight.W500)
+            // 拉线
+            drawLine(color, Offset(sx, sy), Offset(ex, ey), strokeWidth = 1.5f)
+
+            // 标签（银行名 + 占比% 分两行，间距 3dp gap）
+            val labelPaint = android.graphics.Paint().apply {
+                this.color = android.graphics.Color.parseColor("#475569")
+                textSize = 8.sp.toPx()
+                isAntiAlias = true
             }
+            val pctPaint = android.graphics.Paint().apply {
+                this.color = android.graphics.Color.parseColor("#475569")
+                textSize = 8.sp.toPx()
+                isAntiAlias = true
+            }
+
+            // 标签锚点：lineEndR 外再推 12px，按左右侧适配对齐方向
+            val lx = cx + (lineEndR + 12f) * cosR
+            val ly = cy + (lineEndR + 12f) * sinR
+            val align = if (cosR < 0) android.graphics.Paint.Align.RIGHT else android.graphics.Paint.Align.LEFT
+            labelPaint.textAlign = align
+            pctPaint.textAlign = align
+
+            val bankText = name
+            val pctText = "${"%.1f".format(value / total * 100)}%"
+            val yOffset = 6f * density.density  // 两行垂直间距约 3dp
+
+            nativeCanvas.drawText(bankText, lx, ly, labelPaint)
+            nativeCanvas.drawText(pctText, lx, ly + yOffset, pctPaint)
+
             start += sweep
         }
     }
@@ -411,22 +430,13 @@ private fun BankDetailItem(
     )
     val iconSize = 34.dp
 
-    Box(modifier = Modifier.fillMaxWidth()) {
-        // 左侧 icon（垂直居中于两行）
-        Box(
-            modifier = Modifier
-                .size(iconSize)
-                .align(Alignment.CenterStart),
-            contentAlignment = Alignment.Center
-        ) {
-            BankIconBox(bankName = bankName, color = color, size = iconSize)
-        }
-        // 右侧内容
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = iconSize + 10.dp)
-        ) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        BankIconBox(bankName = bankName, color = color, size = iconSize)
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -456,19 +466,6 @@ private fun BankDetailItem(
 
 @Composable
 private fun BankIconBox(bankName: String, color: Color, size: androidx.compose.ui.unit.Dp) {
-    val firstChar = bankName.firstOrNull()?.toString() ?: "?"
-    Box(
-        modifier = Modifier.size(size).clip(CircleShape).background(color),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(firstChar, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
-    }
-}
-
-// ── 银行圆形 Icon（实色底 + 白字）──
-
-@Composable
-private fun BankIcon(bankName: String, color: Color, size: androidx.compose.ui.unit.Dp = 34.dp) {
     val firstChar = bankName.firstOrNull()?.toString() ?: "?"
     Box(
         modifier = Modifier.size(size).clip(CircleShape).background(color),
