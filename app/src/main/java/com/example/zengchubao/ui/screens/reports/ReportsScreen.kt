@@ -346,6 +346,11 @@ private fun DonutChartWithLabels(
         nc.drawText("资产总额", cx, cy + 16f, lblP)
 
         // ── 3. 折线 + 标签 ──
+        val occupiedYs = mutableListOf<Pair<Float, Float>>()
+        val staggerH = with(density) { 12.sp.toPx() }
+        val rowGap = with(density) { 2.dp.toPx() }
+        val margin = with(density) { 4.dp.toPx() }
+
         var start = -90f
         items.forEach { (name, value, color) ->
             val sweep = ((value / total * 360f).coerceAtLeast(1.5)).toFloat()
@@ -364,7 +369,18 @@ private fun DonutChartWithLabels(
             val path = Path().apply { moveTo(sx, sy); lineTo(bx, by); lineTo(ex, by) }
             drawPath(path, color.copy(alpha = 0.6f), style = Stroke(2f))
 
-            val textP = android.graphics.Paint().apply {
+            // Y 错开
+            var adjustedY = by
+            for ((lo, hi) in occupiedYs) {
+                if (kotlin.math.abs(adjustedY - lo) < staggerH || kotlin.math.abs(adjustedY - hi) < staggerH) {
+                    adjustedY = hi + staggerH + rowGap
+                }
+            }
+            val lineH = with(density) { 11.sp.toPx() }
+            occupiedYs.add(adjustedY - lineH * 0.5f to adjustedY + lineH * 1.5f)
+
+            // 标签换行：银行名 / 占比
+            val nameP = android.graphics.Paint().apply {
                 this.color = android.graphics.Color.parseColor("#475569")
                 textSize = 7.sp.toPx()
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
@@ -372,9 +388,26 @@ private fun DonutChartWithLabels(
                 textAlign = if (isRight) android.graphics.Paint.Align.LEFT
                            else android.graphics.Paint.Align.RIGHT
             }
-            val tx = if (isRight) ex + 6f else ex - 6f
-            val ty = by + (textP.textSize / 3f)
-            nc.drawText("$name $pct%", tx, ty, textP)
+            val pctP = android.graphics.Paint().apply {
+                this.color = android.graphics.Color.parseColor("#94A3B8")
+                textSize = 7.sp.toPx()
+                isAntiAlias = true
+                textAlign = if (isRight) android.graphics.Paint.Align.LEFT
+                           else android.graphics.Paint.Align.RIGHT
+            }
+            val nameW = nameP.measureText(name)
+            val pctW = pctP.measureText("$pct%")
+            val lineW = maxOf(nameW, pctW)
+            val tx = if (isRight) {
+                (ex + margin).coerceAtMost(size.width - lineW - margin)
+            } else {
+                (ex - margin).coerceAtLeast(lineW + margin)
+            }
+            val ty1 = adjustedY
+            val ty2 = adjustedY + lineH + rowGap
+            nc.drawText(name, tx, ty1, nameP)
+            nc.drawText("$pct%", tx, ty2, pctP)
+
             start += sweep
         }
     }
