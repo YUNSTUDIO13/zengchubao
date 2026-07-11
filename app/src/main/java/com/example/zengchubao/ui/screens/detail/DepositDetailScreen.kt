@@ -1,8 +1,8 @@
 package com.example.zengchubao.ui.screens.detail
 
-import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -12,7 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,13 +33,21 @@ import kotlinx.datetime.toLocalDateTime
 import java.text.NumberFormat
 import java.util.Locale
 
+private val BrandBlue = Color(0xFF1B4FD8)
+private val BrandBlueBg = Color(0xFFEFF6FF)
+private val EmeraldBg = Color(0xFFECFDF5)
+private val EmeraldText = Color(0xFF059669)
+private val AmberBg = Color(0xFFFFFBEB)
+private val RedBg = Color(0xFFFEF2F2)
+private val BgPage = Color(0xFFF0F4F8)
+
 private val CN_NUMBER = NumberFormat.getNumberInstance(Locale.CHINA).apply {
     minimumFractionDigits = 2; maximumFractionDigits = 2
 }
 private fun fmt(amount: Double): String = "¥${CN_NUMBER.format(amount)}"
 private fun fmtRate(rate: Double): String = "${"%.2f".format(rate)}%"
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DepositDetailScreen(
     depositId: String,
@@ -53,8 +66,11 @@ fun DepositDetailScreen(
     var showEarlyWithdrawalSheet by remember { mutableStateOf(false) }
     var showEditNote by remember { mutableStateOf(false) }
     var noteText by remember(deposit.note) { mutableStateOf(deposit.note) }
+    var isEditingNote by remember { mutableStateOf(false) }
+    var tempNote by remember { mutableStateOf(deposit.note) }
 
     val remainingDays = daysUntilMaturity(deposit.endDate)
+    val totalDays = daysBetween(deposit.startDate, deposit.endDate)
     val accruedInterest = calculateAccruedInterest(
         deposit.principal, deposit.annualRate, deposit.startDate, deposit.termDays, deposit.calcMethod
     )
@@ -62,19 +78,15 @@ fun DepositDetailScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("存单详情", fontSize = 17.sp) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, "返回")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                )
-            )
+            Row(modifier = Modifier.padding(start = 4.dp, top = 44.dp, bottom = 8.dp)) {
+                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Filled.ArrowBack, "返回", tint = Gray700, modifier = Modifier.size(20.dp))
+                }
+                Text("存单详情", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Gray900,
+                    modifier = Modifier.align(Alignment.CenterVertically))
+            }
         },
-        containerColor = Color(0xFFF0F4F8)
+        containerColor = BgPage
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -83,73 +95,93 @@ fun DepositDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
         ) {
-            // ── 银行 & 状态标签 ──
+            // ── 标签行 ──
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = getBankColor(deposit.bankName).copy(alpha = 0.1f)
-                ) {
-                    Text(
-                        deposit.bankName,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = getBankColor(deposit.bankName),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
+                Surface(shape = RoundedCornerShape(999.dp), color = BrandBlueBg) {
+                    Text(deposit.bankName, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                        color = BrandBlue, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                 }
                 val typeLabel = when (deposit.productType) {
                     ProductType.FIXED_DEPOSIT -> "定期存款"
                     ProductType.WEALTH_MGMT -> "理财产品"
                     ProductType.OTHER -> "其他"
                 }
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Blue50
-                ) {
-                    Text(
-                        typeLabel,
-                        fontSize = 12.sp,
-                        color = Blue600,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
+                Surface(shape = RoundedCornerShape(999.dp), color = Gray100) {
+                    Text(typeLabel, fontSize = 12.sp, fontWeight = FontWeight.Medium,
+                        color = Gray500, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                 }
                 Spacer(Modifier.weight(1f))
                 // 状态标签
-                val statusLabel = when (deposit.status) {
-                    DepositStatus.HOLDING -> "持有中"
-                    DepositStatus.MATURED -> "已到期"
-                    DepositStatus.EARLY_WITHDRAWN -> "已支取"
-                    DepositStatus.ARCHIVED -> "已归档"
+                val (statusLabel, statusBg, statusColor) = when (deposit.status) {
+                    DepositStatus.HOLDING -> Triple("持有中", EmeraldBg, EmeraldText)
+                    DepositStatus.MATURED -> Triple("已到期", RedBg, Red500)
+                    DepositStatus.EARLY_WITHDRAWN -> Triple("已支取", AmberBg, Amber600)
+                    DepositStatus.ARCHIVED -> Triple("已归档", Gray100, Gray500)
                 }
-                val statusColor = when (deposit.status) {
-                    DepositStatus.HOLDING -> Emerald500
-                    DepositStatus.MATURED -> Red500
-                    DepositStatus.EARLY_WITHDRAWN -> Amber500
-                    DepositStatus.ARCHIVED -> Gray500
+                Surface(shape = RoundedCornerShape(999.dp), color = statusBg) {
+                    Text(statusLabel, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                        color = statusColor, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
                 }
-                Text(statusLabel, fontSize = 12.sp, color = statusColor, fontWeight = FontWeight.Medium)
             }
 
             Spacer(Modifier.height(20.dp))
 
-            // ── 产品名 + 本金 ──
-            Text(deposit.productName, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Gray900)
+            // ── Hero：产品名 + 本金 + 距到期环 ──
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(deposit.productName, fontSize = 14.sp, color = Gray400)
+                    Spacer(Modifier.height(2.dp))
+                    Text(fmt(deposit.principal), fontSize = 30.sp, fontWeight = FontWeight.Bold,
+                        color = Gray900, letterSpacing = (-0.5).sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text("本金", fontSize = 12.sp, color = Gray400)
+                }
+                if (deposit.status == DepositStatus.HOLDING && totalDays > 0) {
+                    DaysRing(daysLeft = remainingDays.coerceAtLeast(0), totalDays = totalDays)
+                }
+            }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
 
-            Text(fmt(deposit.principal), fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Blue600)
+            // ── Highlight 条 ──
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    color = BrandBlueBg
+                ) {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                        Text("当前资产余额", fontSize = 11.sp, color = Gray400)
+                        Text(fmt(assetBalance), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = BrandBlue)
+                    }
+                }
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Gray50
+                ) {
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                        Text("已累计收益", fontSize = 11.sp, color = Gray400)
+                        Text(fmt(accruedInterest), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Gray800)
+                    }
+                }
+            }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
             // ── 详情卡片 ──
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Gray100)
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
+                Column(Modifier.padding(horizontal = 16.dp)) {
                     DetailRow("存期", deposit.termLabel.ifEmpty { "${deposit.termDays}天" })
                     DetailDivider()
                     DetailRow("年利率", fmtRate(deposit.annualRate))
@@ -160,15 +192,9 @@ fun DepositDetailScreen(
                     DetailDivider()
                     DetailRow("到期日期", deposit.endDate)
                     DetailDivider()
-                    DetailRow("距到期", if (remainingDays > 0) "${remainingDays}天" else if (remainingDays == 0) "今日到期" else "已到期${-remainingDays}天")
-                    DetailDivider()
                     DetailRow("到期本息", fmt(deposit.maturityAmount))
                     DetailDivider()
                     DetailRow("到期利息", fmt(deposit.maturityAmount - deposit.principal))
-                    DetailDivider()
-                    DetailRow("已累计收益", fmt(accruedInterest))
-                    DetailDivider()
-                    DetailRow("当前资产余额", fmt(assetBalance), valueColor = Blue600)
                 }
             }
 
@@ -177,80 +203,106 @@ fun DepositDetailScreen(
             // ── 备注 ──
             Card(
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, Gray100)
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .clickable { if (!isEditingNote) { isEditingNote = true; tempNote = noteText } }
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Notes, null, tint = Gray400, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Outlined.Notes, null, tint = Gray400, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(8.dp))
-                        if (noteText.isNotEmpty()) {
-                            Text(noteText, fontSize = 14.sp, color = Gray700)
-                        } else {
-                            Text("添加备注...", fontSize = 14.sp, color = Gray400)
-                        }
+                        Text("备注", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Gray400)
+                        Spacer(Modifier.weight(1f))
+                        Icon(Icons.Outlined.Edit, null, tint = Gray300, modifier = Modifier.size(12.dp))
                     }
-                    IconButton(onClick = { showEditNote = true }, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Outlined.Edit, "编辑备注", tint = Gray400, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.height(6.dp))
+                    if (isEditingNote) {
+                        OutlinedTextField(
+                            value = tempNote,
+                            onValueChange = { tempNote = it },
+                            placeholder = { Text("添加备注…", fontSize = 14.sp, color = Gray300) },
+                            modifier = Modifier.fillMaxWidth(),
+                            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp, color = Gray700),
+                            singleLine = false,
+                            maxLines = 3,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            )
+                        )
+                        // 保存 / 取消
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.padding(top = 8.dp)) {
+                            TextButton(onClick = { isEditingNote = false }) {
+                                Text("取消", fontSize = 13.sp, color = Gray500)
+                            }
+                            TextButton(onClick = {
+                                noteText = tempNote
+                                isEditingNote = false
+                                showEditNote = false
+                                scope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        storage.saveDeposit(deposit.copy(note = tempNote, updatedAt = System.currentTimeMillis()))
+                                    }
+                                }
+                            }) {
+                                Text("保存", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = BrandBlue)
+                            }
+                        }
+                    } else {
+                        Text(
+                            noteText.ifEmpty { "添加备注…" },
+                            fontSize = 14.sp,
+                            color = if (noteText.isEmpty()) Gray300 else Gray700
+                        )
                     }
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
 
             // ── 操作按钮 ──
-            // 提前支取（仅持有中可操作）
+            // 提前支取（仅持有中）
             if (deposit.status == DepositStatus.HOLDING) {
-                OutlinedButton(
+                ActionButton(
                     onClick = { showEarlyWithdrawalSheet = true },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Amber600)
-                ) {
-                    Icon(Icons.Outlined.MoneyOff, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("提前支取模拟器", fontSize = 15.sp)
-                }
-                Spacer(Modifier.height(10.dp))
+                    bgColor = Amber50, borderColor = AmberBg, contentColor = Amber600,
+                    icon = { Icon(Icons.Outlined.FlashOn, null, tint = Amber600, modifier = Modifier.size(16.dp)) },
+                    text = "提前支取模拟器"
+                )
+                Spacer(Modifier.height(12.dp))
             }
 
-            // 编辑按钮 — 已归档存单不显示
+            // 编辑（非归档期）
             if (deposit.status != DepositStatus.ARCHIVED) {
-                OutlinedButton(
+                ActionButton(
                     onClick = { onEdit(deposit) },
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Blue600)
-                ) {
-                    Icon(Icons.Outlined.Edit, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("编辑存单", fontSize = 15.sp)
-                }
-                Spacer(Modifier.height(10.dp))
+                    bgColor = BrandBlueBg, borderColor = Blue100, contentColor = BrandBlue,
+                    icon = { Icon(Icons.Outlined.Edit, null, tint = BrandBlue, modifier = Modifier.size(16.dp)) },
+                    text = "编辑存单"
+                )
+                Spacer(Modifier.height(12.dp))
             }
 
-            // 删除按钮
-            OutlinedButton(
+            // 删除
+            ActionButton(
                 onClick = { showDeleteDialog = true },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Red500)
-            ) {
-                Icon(Icons.Outlined.Delete, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("删除存单", fontSize = 15.sp)
-            }
+                bgColor = Red50, borderColor = RedBg, contentColor = Red500,
+                icon = { Icon(Icons.Outlined.Delete, null, tint = Red500, modifier = Modifier.size(16.dp)) },
+                text = "删除存单"
+            )
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(40.dp))
         }
     }
 
-    // ── 删除确认对话框 ──
+    // ── 删除确认 ──
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -295,16 +347,16 @@ fun DepositDetailScreen(
         )
     }
 
-    // ── 编辑备注对话框 ──
+    // ── 编辑备注对话框（仅弹窗编辑）──
     if (showEditNote) {
-        var tempNote by remember { mutableStateOf(noteText) }
+        var temp by remember { mutableStateOf(noteText) }
         AlertDialog(
             onDismissRequest = { showEditNote = false },
             title = { Text("编辑备注") },
             text = {
                 OutlinedTextField(
-                    value = tempNote,
-                    onValueChange = { tempNote = it },
+                    value = temp,
+                    onValueChange = { temp = it },
                     placeholder = { Text("添加备注信息...") },
                     modifier = Modifier.fillMaxWidth().height(100.dp),
                     maxLines = 3
@@ -312,11 +364,11 @@ fun DepositDetailScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    noteText = tempNote
+                    noteText = temp
                     showEditNote = false
                     scope.launch {
                         withContext(Dispatchers.IO) {
-                            storage.saveDeposit(deposit.copy(note = tempNote, updatedAt = System.currentTimeMillis()))
+                            storage.saveDeposit(deposit.copy(note = temp, updatedAt = System.currentTimeMillis()))
                         }
                     }
                 }) { Text("保存") }
@@ -328,15 +380,47 @@ fun DepositDetailScreen(
     }
 }
 
-// ── 详情行 ──
-
+// ── 距到期圆环 ──
 @Composable
-private fun DetailRow(label: String, value: String, valueColor: Color = Gray900) {
+private fun DaysRing(daysLeft: Int, totalDays: Int) {
+    val pct = if (totalDays > 0) (daysLeft.toFloat() / totalDays).coerceIn(0f, 1f) else 1f
+    val r = 28f; val circ = 2 * Math.PI * r
+    val dash = circ * pct
+    Canvas(modifier = Modifier.size(72.dp)) {
+        val cx = size.width / 2; val cy = size.height / 2
+        // 底灰环
+        drawCircle(Color(0xFFE8ECF4), r, Offset(cx, cy), style = Stroke(5f, cap = StrokeCap.Round))
+        // 品牌色进度环（从-90度即12点钟方向顺时针）
+        drawArc(BrandBlue, -90f, 360f * pct, false,
+            Offset(cx - r, cy - r), Size(r * 2, r * 2),
+            style = Stroke(5f, cap = StrokeCap.Round))
+        // 中心文字
+        drawContext.canvas.nativeCanvas.apply {
+            val daysP = android.graphics.Paint().apply {
+                color = android.graphics.Color.parseColor("#1B4FD8")
+                textSize = 11.sp.toPx(); typeface = android.graphics.Typeface.DEFAULT_BOLD
+                isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER
+            }
+            val labelP = android.graphics.Paint().apply {
+                color = android.graphics.Color.parseColor("#8892A4")
+                textSize = 9.sp.toPx()
+                isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER
+            }
+            drawText("$daysLeft", cx, cy - 2f, daysP)
+            drawText("天", cx, cy + 12f, labelP)
+        }
+    }
+}
+
+// ── 详情行 ──
+@Composable
+private fun DetailRow(label: String, value: String, valueColor: Color = Gray800) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, fontSize = 14.sp, color = Gray500)
+        Text(label, fontSize = 13.sp, color = Gray500)
         Text(value, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = valueColor)
     }
 }
@@ -346,8 +430,34 @@ private fun DetailDivider() {
     HorizontalDivider(color = Gray100, thickness = 0.5.dp)
 }
 
-// ── 提前支取模拟器底部弹窗 ──
+// ── 操作按钮 ──
+@Composable
+private fun ActionButton(
+    onClick: () -> Unit,
+    bgColor: Color, borderColor: Color, contentColor: Color,
+    icon: @Composable () -> Unit,
+    text: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(bgColor)
+            .border(1.dp, borderColor, RoundedCornerShape(16.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        icon()
+        Spacer(Modifier.width(12.dp))
+        Text(text, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = contentColor)
+        Spacer(Modifier.weight(1f))
+        Icon(Icons.Filled.ChevronRight, null, tint = contentColor.copy(alpha = 0.4f), modifier = Modifier.size(16.dp))
+    }
+}
 
+// ── 提前支取模拟器 BottomSheet ──
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun EarlyWithdrawalSheet(
@@ -359,7 +469,7 @@ fun EarlyWithdrawalSheet(
     var demandRate by remember { mutableStateOf("0.3") }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    val rate = try { demandRate.toDoubleOrNull() ?: 0.3 } catch (_: Exception) { 0.3 }
+    val rate = demandRate.toDoubleOrNull() ?: 0.3
     val result = try {
         calculateEarlyWithdrawalInterest(
             principal = deposit.principal,
@@ -368,130 +478,127 @@ fun EarlyWithdrawalSheet(
             demandRate = rate
         )
     } catch (_: Exception) {
-        EarlyWithdrawalResult(
-            interest = 0.0, totalAmount = deposit.principal, actualDays = 0,
-            demandRate = rate, description = "日期格式无效，请重新选择"
-        )
+        EarlyWithdrawalResult(0.0, deposit.principal, 0, rate, "日期格式无效，请重新选择")
     }
 
     val normalMaturityInterest = deposit.maturityAmount - deposit.principal
     val lossAmount = normalMaturityInterest - result.interest
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Color.White,
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-            )
-            .padding(24.dp)
-            .verticalScroll(rememberScrollState())
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = Color.White,
+        dragHandle = {
+            Box(Modifier.width(40.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(Gray200))
+        }
     ) {
-        // 拖拽指示器
-        Box(
+        Column(
             modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .width(36.dp)
-                .height(4.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(Gray300)
-        )
-        Spacer(Modifier.height(20.dp))
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            Text("提前支取模拟器", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Gray900)
+            Spacer(Modifier.height(4.dp))
+            Text("传统标准：定期存款提前支取部分一律按支取日活期挂牌利率计息，采用实际天数计算。算头不算尾。",
+                fontSize = 12.sp, color = Gray400, lineHeight = 18.sp)
 
-        Text("提前支取模拟器", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(20.dp))
 
-        Spacer(Modifier.height(8.dp))
-        Text("传统标准：定期存款提前支取部分一律按支取日活期挂牌利率计息，采用实际天数计算。算头不算尾。",
-            fontSize = 12.sp, color = Gray500)
+            // 支取日期
+            Text("支取日期", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Gray500)
+            Spacer(Modifier.height(6.dp))
+            OutlinedTextField(
+                value = withdrawalDate,
+                onValueChange = { withdrawalDate = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("YYYY-MM-DD", fontSize = 14.sp) },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = BrandBlue,
+                    unfocusedBorderColor = Gray200
+                ),
+                shape = RoundedCornerShape(12.dp),
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(Icons.Outlined.DateRange, "选择日期", modifier = Modifier.size(20.dp))
+                    }
+                }
+            )
 
-        Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(12.dp))
 
-        // 支取日期（支持DatePicker）
-        Text("支取日期", fontSize = 13.sp, color = Gray600)
-        Spacer(Modifier.height(4.dp))
-        OutlinedTextField(
-            value = withdrawalDate,
-            onValueChange = { withdrawalDate = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("YYYY-MM-DD") },
-            singleLine = true,
-            trailingIcon = {
-                IconButton(onClick = { showDatePicker = true }) {
-                    Icon(Icons.Outlined.CalendarToday, "选择日期", modifier = Modifier.size(20.dp))
+            // 活期利率
+            Text("活期挂牌利率 (%)", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Gray500)
+            Spacer(Modifier.height(6.dp))
+            OutlinedTextField(
+                value = demandRate,
+                onValueChange = { demandRate = it.filter { c -> c.isDigit() || c == '.' } },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                suffix = { Text("%", color = Gray400) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = BrandBlue,
+                    unfocusedBorderColor = Gray200
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(Modifier.height(20.dp))
+
+            // 计算结果
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = BrandBlueBg.copy(alpha = 0.6f))
+            ) {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    ResultRow("实际计息天数", "${result.actualDays}天", "算头不算尾")
+                    ResultRow("活期利率", "${result.demandRate}%", "")
+                    ResultRow("提前支取利息", fmt(result.interest), result.tierLabel)
+                    ResultRow("可收回总额", fmt(result.totalAmount), "本金+利息")
+                    Spacer(Modifier.height(4.dp))
+                    HorizontalDivider(color = Color(0xFFBFDBFE).copy(alpha = 0.4f))
+                    Spacer(Modifier.height(4.dp))
+                    ResultRow("正常到期利息", fmt(normalMaturityInterest), "")
+                    ResultRow("利息损失", fmt(lossAmount), "", valueColor = Red500)
                 }
             }
-        )
 
-        Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
 
-        // 活期利率
-        Text("活期挂牌利率 (%)", fontSize = 13.sp, color = Gray600)
-        Spacer(Modifier.height(4.dp))
-        OutlinedTextField(
-            value = demandRate,
-            onValueChange = { demandRate = it.filter { c -> c.isDigit() || c == '.' } },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            suffix = { Text("%") }
-        )
+            Text(result.description, fontSize = 11.sp, color = Gray400, lineHeight = 16.sp)
 
-        Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(24.dp))
 
-        // ── 计算结果 ──
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Blue50)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                ResultRow("实际计息天数", "${result.actualDays}天", "算头不算尾")
-                ResultRow("活期利率", "${result.demandRate}%", "")
-                ResultRow("提前支取利息", fmt(result.interest), result.tierLabel)
-                ResultRow("可收回总额", fmt(result.totalAmount), "本金+利息")
-                HorizontalDivider(color = Blue200, modifier = Modifier.padding(vertical = 8.dp))
-                ResultRow("正常到期利息", fmt(normalMaturityInterest), "")
-                ResultRow("利息损失", fmt(lossAmount), "", Red500)
+            // 按钮
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, Gray200),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Gray600)
+                ) { Text("取消", fontSize = 14.sp) }
+
+                Button(
+                    onClick = onConfirm,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandBlue)
+                ) { Text("确认支取", fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
             }
         }
-
-        Spacer(Modifier.height(10.dp))
-
-        // 规则说明
-        Text(
-            result.description,
-            fontSize = 11.sp,
-            color = Gray500,
-            lineHeight = 16.sp
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        // 按钮
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(
-                onClick = onDismiss,
-                modifier = Modifier.weight(1f).height(48.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) { Text("取消") }
-
-            Button(
-                onClick = onConfirm,
-                modifier = Modifier.weight(1f).height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Amber500)
-            ) { Text("确认支取") }
-        }
-
-        Spacer(Modifier.height(16.dp))
     }
 
-    // 日期选择器
     if (showDatePicker) {
         val state = rememberDatePickerState()
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = { TextButton({
                 state.selectedDateMillis?.let { millis ->
-                    withdrawalDate = Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+                    withdrawalDate = Instant.fromEpochMilliseconds(millis)
+                        .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
                 }
                 showDatePicker = false
             }) { Text("确定") } },
@@ -500,18 +607,20 @@ fun EarlyWithdrawalSheet(
     }
 }
 
+// ── 模拟器结果行 ──
 @Composable
-private fun ResultRow(label: String, value: String, hint: String, valueColor: Color = Gray900) {
+private fun ResultRow(label: String, value: String, hint: String, valueColor: Color = Gray800) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, fontSize = 13.sp, color = Gray600)
+        Text(label, fontSize = 13.sp, color = Gray500)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = valueColor)
+            Text(value, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = valueColor)
             if (hint.isNotEmpty()) {
-                Text("  $hint", fontSize = 11.sp, color = Gray400)
+                Spacer(Modifier.width(6.dp))
+                Text(hint, fontSize = 11.sp, color = Gray400)
             }
         }
     }
