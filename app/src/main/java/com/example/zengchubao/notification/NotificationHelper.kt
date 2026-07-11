@@ -79,6 +79,7 @@ object NotificationHelper {
         val requestCode = dep.id.hashCode()
 
         val intent = Intent(context, ReminderReceiver::class.java).apply {
+            action = "com.example.zengchubao.REMIND"
             putExtra("title", "存单到期提醒")
             putExtra("body", body)
             putExtra("notify_id", requestCode)
@@ -116,6 +117,7 @@ object NotificationHelper {
             val requestCode = dep.id.hashCode()
             // 用与 scheduleOne 完全一致的 Intent 结构（含 extras）才能匹配到同一个 PendingIntent
             val intent = Intent(context, ReminderReceiver::class.java).apply {
+                action = "com.example.zengchubao.REMIND"
                 putExtra("title", "存单到期提醒")
                 putExtra("body", "")
                 putExtra("notify_id", requestCode)

@@ -24,7 +24,7 @@
         </activity>
 
         <receiver android:name=".notification.ReminderReceiver"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="com.example.zengchubao.REMIND" />
             </intent-filter>
