@@ -308,7 +308,7 @@ private fun DonutChartWithLabels(
     )
 
     val density = LocalDensity.current
-    val outerRpx = with(density) { 45.dp.toPx() }
+    val outerRpx = with(density) { 65.dp.toPx() }
     val strokeWpx = outerRpx * 0.36f
     val innerRpx = outerRpx - strokeWpx
     val lineGap = with(density) { 4.dp.toPx() }
@@ -351,7 +351,7 @@ private fun DonutChartWithLabels(
         }
         val centerValue = android.graphics.Paint().apply {
             color = android.graphics.Color.parseColor("#1E293B")
-            textSize = 18.sp.toPx()
+            textSize = 12.sp.toPx()
             typeface = android.graphics.Typeface.DEFAULT_BOLD
             isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER
         }
@@ -452,15 +452,15 @@ private fun BankDetailItem(
                 Spacer(Modifier.weight(1f))
                 Text(fmt(balance), fontSize = 12.sp, fontWeight = FontWeight.W700, color = Color(0xFF1E293B), maxLines = 1)
             }
-            Spacer(Modifier.height(5.dp))
+            Spacer(Modifier.height(2.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(Modifier.weight(1f).height(4.dp).background(Color(0xFFF1F5F9), RoundedCornerShape(2.dp))) {
-                    Box(Modifier.fillMaxHeight().fillMaxWidth(barAnim).background(color, RoundedCornerShape(2.dp)))
+                Box(Modifier.weight(1f).height(2.dp).background(Color(0xFFF1F5F9))) {
+                    Box(Modifier.fillMaxHeight().fillMaxWidth(barAnim).background(color))
                 }
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(8.dp))
                 Text("${count}笔", fontSize = 9.sp, color = Color(0xFF94A3B8))
             }
         }
