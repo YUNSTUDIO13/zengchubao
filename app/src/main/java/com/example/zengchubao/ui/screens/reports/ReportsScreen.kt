@@ -346,9 +346,9 @@ private fun DonutChartWithLabels(
     // ── 中心文字（Compose Text 叠加，避免 nativeCanvas 重叠）──
     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("资产总额", fontSize = 8.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.W500)
-            Spacer(Modifier.height(2.dp))
             Text(fmt(totalBalance), fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+            Spacer(Modifier.height(2.dp))
+            Text("资产总额", fontSize = 8.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.W500)
         }
     }
 }
