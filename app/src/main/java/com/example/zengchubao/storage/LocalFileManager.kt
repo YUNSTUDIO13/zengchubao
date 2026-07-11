@@ -232,7 +232,11 @@ class LocalFileManager(private val context: Context) {
     suspend fun getSettings(): AppSettings = withContext(Dispatchers.IO) {
         if (!settingsFile.exists()) return@withContext AppSettings()
         try {
-            json.decodeFromString<AppSettings>(settingsFile.readText())
+            val saved = json.decodeFromString<AppSettings>(settingsFile.readText())
+            val migrated = saved.migrated()
+            // 主动落盘，消除旧配置中的已废弃项
+            saveSettings(migrated)
+            migrated
         } catch (e: Exception) {
             AppSettings()
         }

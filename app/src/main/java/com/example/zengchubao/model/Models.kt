@@ -148,9 +148,10 @@ data class ReportItemSetting(
 )
 
 val DEFAULT_REPORT_ITEMS = listOf(
-    ReportItemSetting("assetOverview", "持有中资产多维度分析", true),
+    ReportItemSetting("assetOverview", "资产收益", true),
     ReportItemSetting("bankDistribution", "按银行资产分布", true),
-    ReportItemSetting("assetCategory", "资产分类明细", true)
+    ReportItemSetting("assetCategory", "资产分类明细", true),
+    ReportItemSetting("assetTrend", "资产趋势图", true)
 )
 
 // ── 应用设置 ──
@@ -169,4 +170,22 @@ data class AppSettings(
     val showAssetCategoryDetail: Boolean = true,
     // 报表顺序与可见性（v2.0）
     val reportItems: List<ReportItemSetting> = DEFAULT_REPORT_ITEMS
-)
+) {
+    /**
+     * 兼容旧版本备份：
+     * - 移除 DEFAULT_REPORT_ITEMS 中已废弃的 id
+     * - 用 DEFAULT 中的最新 title 覆写（防止重命名后旧 title 残留）
+     * - 将 DEFAULT_REPORT_ITEMS 中新增的条目补入 reportItems
+     * 保持既有顺序不变。
+     */
+    fun migrated(): AppSettings {
+        val defaultsById = DEFAULT_REPORT_ITEMS.associateBy { it.id }
+        val validIds = defaultsById.keys
+        val kept = reportItems.filter { it.id in validIds }
+            .map { item -> defaultsById[item.id] ?: item }
+        val existingIds = kept.map { it.id }.toSet()
+        val missing = DEFAULT_REPORT_ITEMS.filter { it.id !in existingIds }
+        if (kept.size == reportItems.size && missing.isEmpty()) return this
+        return copy(reportItems = kept + missing)
+    }
+}

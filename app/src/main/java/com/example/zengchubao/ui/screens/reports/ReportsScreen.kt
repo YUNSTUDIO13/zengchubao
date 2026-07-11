@@ -148,10 +148,13 @@ fun ReportsScreen(
                         totalBalance = totalBalance,
                         bankColorMap = bankColorMap
                     )
+                    "assetTrend" -> AssetTrendSection(
+                        deposits = deposits
+                    )
                 }
             }
             if (index < settings.reportItems.lastIndex) {
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(10.dp))
             }
         }
 
@@ -160,7 +163,7 @@ fun ReportsScreen(
 }
 
 // ── 资产总览（3x2网格） ──
-// 布局：持有本金/资产余额 | 日收益/预期年度收益 | 到期总收益/综合年化率
+// 布局：持有本金/资产余额 | 日收益/预期年度收益 | 持有中累计收益/到期总收益 | 归档历史收益
 
 @Composable
 private fun AssetOverviewSection(
@@ -180,12 +183,12 @@ private fun AssetOverviewSection(
     val rateText = "${dailyRate}"
     Card(
         modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(Modifier.padding(12.dp)) {
-            Text("资产收益", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+            Text("资产收益", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                 AssetField("持有本金", fmt(totalDeposited), Modifier.weight(1f))
@@ -257,19 +260,19 @@ private fun AssetCategorySection(
 ) {
     Card(
         modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            Text("资产分类明细", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+            Text("资产分类明细", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
             Spacer(Modifier.height(8.dp))
 
             // 内层灰色圆角卡片（2层结构：白卡→灰卡）
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF8FAFC), RoundedCornerShape(16.dp))
             ) {
                 // 表头（浅灰色背景）
                 Row(
@@ -279,10 +282,10 @@ private fun AssetCategorySection(
                         .padding(horizontal = 8.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("类型", Modifier.weight(1.2f), fontSize = 9.sp, fontWeight = FontWeight.W600, color = Color(0xFF475569), textAlign = TextAlign.Center)
+                    Text("类型", Modifier.weight(1.2f), fontSize = 9.sp, fontWeight = FontWeight.W600, color = Color(0xFF475569), textAlign = TextAlign.Start)
                     Text("余额", Modifier.weight(1f), fontSize = 9.sp, fontWeight = FontWeight.W600, color = Color(0xFF475569), textAlign = TextAlign.Center)
                     Text("占比", Modifier.weight(0.8f), fontSize = 9.sp, fontWeight = FontWeight.W600, color = Color(0xFF475569), textAlign = TextAlign.Center)
-                    Text("笔数", Modifier.weight(0.6f), fontSize = 9.sp, fontWeight = FontWeight.W600, color = Color(0xFF475569), textAlign = TextAlign.Center)
+                    Text("笔数", Modifier.weight(0.6f).padding(end = 6.dp), fontSize = 9.sp, fontWeight = FontWeight.W600, color = Color(0xFF475569), textAlign = TextAlign.Center)
                 }
 
                 // 数据行（浅浅灰色：内卡片底色，仅用分割线分隔）
@@ -295,10 +298,10 @@ private fun AssetCategorySection(
                                 .padding(vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(bank, Modifier.weight(1.2f), fontSize = 11.sp, color = Color(0xFF1E293B), textAlign = TextAlign.Center)
+                            Text(bank, Modifier.weight(1.2f), fontSize = 11.sp, color = Color(0xFF1E293B), textAlign = TextAlign.Start)
                             Text(fmtI(bal), Modifier.weight(1f), fontSize = 11.sp, fontWeight = FontWeight.W600, color = Color(0xFF1E293B), textAlign = TextAlign.Center)
                             Text("${"%.1f".format(pct)}%", Modifier.weight(0.8f), fontSize = 11.sp, color = Color(0xFF475569), textAlign = TextAlign.Center)
-                            Text("${deps.size}笔", Modifier.weight(0.6f), fontSize = 11.sp, color = Color(0xFF475569), textAlign = TextAlign.Center)
+                            Text("${deps.size}笔", Modifier.weight(0.6f).padding(end = 6.dp), fontSize = 11.sp, color = Color(0xFF475569), textAlign = TextAlign.Center)
                         }
                         if (i < bankGroups.size - 1) {
                             HorizontalDivider(color = Color(0xFFEEF2F6), thickness = 1.dp)
@@ -339,13 +342,13 @@ private fun AssetField(label: String, value: String, modifier: Modifier = Modifi
 private fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     Card(
         modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
-            Spacer(Modifier.height(12.dp))
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+            Text(title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF334155))
+            Spacer(Modifier.height(10.dp))
             content()
         }
     }

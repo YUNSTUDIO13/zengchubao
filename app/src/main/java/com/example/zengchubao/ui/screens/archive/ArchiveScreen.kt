@@ -38,6 +38,20 @@ fun ArchiveScreen(
     // 归档统计
     val totalPrincipal = remember(archived) { archived.sumOf { it.principal } }
     val totalYield = remember(archived) { archived.sumOf { it.maturityAmount - it.principal } }
+    val momText = remember(archiveRecords) {
+        if (archiveRecords.size < 2) "---"
+        else {
+            val sorted = archiveRecords.sortedByDescending { it.createdAt }
+            val latest = sorted[0].totalYield
+            val prev = sorted[1].totalYield
+            if (prev <= 0) "---"
+            else {
+                val mom = ((latest - prev) / prev * 100)
+                val arrow = if (mom >= 0) "↑" else "↓"
+                "$arrow 环比 ${if (mom >= 0) "+" else ""}${"%.1f".format(mom)}%"
+            }
+        }
+    }
     val weightedRate = remember(archived) {
         if (totalPrincipal > 0) archived.sumOf { it.principal * it.annualRate } / totalPrincipal else 0.0
     }
@@ -65,16 +79,16 @@ fun ArchiveScreen(
                     color = Color(0xFFBFDBFE), letterSpacing = 1.sp)
                 Text(fmtI(totalYield), fontSize = 30.sp, fontWeight = FontWeight.Bold,
                     color = Color.White, lineHeight = 30.sp)
-                Text("↑ 环比 +12.1%", fontSize = 10.sp, color = Color(0xFFBFDBFE).copy(alpha = 0.8f))
+                Text(momText, fontSize = 10.sp, color = Color(0xFFBFDBFE).copy(alpha = 0.8f))
                 Spacer(Modifier.height(16.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(0.8f)) {
                         Text("综合年化率%", fontSize = 9.sp, fontWeight = FontWeight.W500,
                             color = Color(0xFFBFDBFE).copy(alpha = 0.7f), lineHeight = 9.sp)
                         Text("${"%.2f".format(weightedRate)}%", fontSize = 18.sp, fontWeight = FontWeight.Bold,
                             color = Color.White, lineHeight = 20.sp)
                     }
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1.2f)) {
                         Text("投入本金", fontSize = 9.sp, fontWeight = FontWeight.W500,
                             color = Color(0xFFBFDBFE).copy(alpha = 0.7f), lineHeight = 9.sp)
                         Text(fmtI(totalPrincipal), fontSize = 18.sp, fontWeight = FontWeight.Bold,

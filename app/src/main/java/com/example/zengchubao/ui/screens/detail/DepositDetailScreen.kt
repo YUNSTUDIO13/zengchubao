@@ -219,19 +219,20 @@ fun DepositDetailScreen(
                 Spacer(Modifier.height(10.dp))
             }
 
-            // 编辑按钮
-            OutlinedButton(
-                onClick = { onEdit(deposit) },
-                modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Blue600)
-            ) {
-                Icon(Icons.Outlined.Edit, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("编辑存单", fontSize = 15.sp)
+            // 编辑按钮 — 已归档存单不显示
+            if (deposit.status != DepositStatus.ARCHIVED) {
+                OutlinedButton(
+                    onClick = { onEdit(deposit) },
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Blue600)
+                ) {
+                    Icon(Icons.Outlined.Edit, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("编辑存单", fontSize = 15.sp)
+                }
+                Spacer(Modifier.height(10.dp))
             }
-
-            Spacer(Modifier.height(10.dp))
 
             // 删除按钮
             OutlinedButton(
