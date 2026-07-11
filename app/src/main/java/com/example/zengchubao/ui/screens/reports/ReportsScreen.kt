@@ -250,13 +250,13 @@ private fun BankDistributionSection(
             Box(Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     DonutEmptyChart()
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(10.dp))
                     Text("暂无资产", fontSize = 11.sp, color = Color(0xFF94A3B8))
                 }
             }
         } else {
             // Donut 环形图
-            Box(modifier = Modifier.fillMaxWidth().height(280.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
                 DonutChartWithLabels(
                     items = donutItems,
                     totalBalance = totalBalance,
@@ -312,11 +312,11 @@ private fun DonutChartWithLabels(
         val viewH = constraints.maxHeight.toFloat()
         val cx = viewW / 2f
         val cy = viewH / 2f
-        val outerR = minOf(viewW * 0.42f, with(density) { 160.dp.toPx() })
-        val strokeW = outerR * 0.43f
+        val outerR = with(density) { 72.dp.toPx() }
+        val strokeW = outerR * 0.32f
         val innerR = outerR - strokeW
         val lineStartR = outerR + 4f
-        val lineEndR = outerR + 32f
+        val lineEndR = outerR + 24f
 
         val total = items.sumOf { it.second }
         if (total <= 0) return@BoxWithConstraints
@@ -422,9 +422,12 @@ private fun BankDetailItem(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(bankName, fontSize = 12.sp, fontWeight = FontWeight.W700, color = Color(0xFF1E293B))
-                Spacer(Modifier.width(6.dp))
-                Text("${"%.1f".format(percentage)}%", fontSize = 9.sp, color = Color(0xFF94A3B8))
+                // 银行名 + 占比 整组，左对齐
+                Row(Modifier.weight(1f, fill = false), verticalAlignment = Alignment.CenterVertically) {
+                    Text(bankName, fontSize = 12.sp, fontWeight = FontWeight.W700, color = Color(0xFF1E293B))
+                    Spacer(Modifier.width(6.dp))
+                    Text("${"%.1f".format(percentage)}%", fontSize = 9.sp, color = Color(0xFF94A3B8))
+                }
                 Spacer(Modifier.weight(1f))
                 Text(fmt(balance), fontSize = 12.sp, fontWeight = FontWeight.W700, color = Color(0xFF1E293B))
             }
