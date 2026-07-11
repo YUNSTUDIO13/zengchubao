@@ -257,7 +257,7 @@ private fun BankDistributionSection(
             }
         } else {
             // Donut 环形图
-            Box(modifier = Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
                 DonutChartWithLabels(
                     items = donutItems,
                     totalBalance = totalBalance,
@@ -395,10 +395,14 @@ private fun DonutLabels(
                 textSize = 6.sp.toPx()
                 isAntiAlias = true
             }
-            val lx = cx + (lineEnd + labelGap) * cosR
-            val ly = cy + (lineEnd + labelGap) * sinR
+            val lxRaw = cx + (lineEnd + labelGap) * cosR
+            val lyRaw = cy + (lineEnd + labelGap) * sinR
             val textW = labelPaint.measureText(labelText)
             val maxW = with(density) { 50.dp.toPx() }
+            // 钳制到 canvas 边缘 (留 6dp buffer)
+            val bufferPx = with(density) { 6.dp.toPx() }
+            val lx = lxRaw.coerceIn(bufferPx, w - bufferPx)
+            val ly = lyRaw.coerceIn(bufferPx, h - bufferPx)
             if (textW > maxW) {
                 labelPaint.textAlign = android.graphics.Paint.Align.CENTER
                 drawContext.canvas.nativeCanvas.drawText(name, lx, ly, labelPaint)
