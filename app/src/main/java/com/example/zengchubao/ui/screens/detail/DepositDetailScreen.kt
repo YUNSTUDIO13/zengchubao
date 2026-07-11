@@ -1,5 +1,8 @@
 package com.example.zengchubao.ui.screens.detail
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -334,25 +337,32 @@ fun DepositDetailScreen(
         )
     }
 
-    // ── 提前支取模拟器 BottomSheet ──
-    if (showEarlyWithdrawalSheet) {
-        EarlyWithdrawalSheet(
-            deposit = deposit,
-            onDismiss = { showEarlyWithdrawalSheet = false },
-            onConfirm = {
-                showEarlyWithdrawalSheet = false
-                scope.launch {
-                    withContext(Dispatchers.IO) {
-                        val updated = deposit.copy(
-                            status = DepositStatus.EARLY_WITHDRAWN,
-                            updatedAt = System.currentTimeMillis()
-                        )
-                        storage.saveDeposit(updated)
+    // ── 提前支取模拟器 ──
+    AnimatedVisibility(
+        visible = showEarlyWithdrawalSheet,
+        enter = fadeIn(tween(300)),
+        exit = fadeOut(tween(300))
+    ) {
+        if (showEarlyWithdrawalSheet) {
+            BackHandler { showEarlyWithdrawalSheet = false }
+            EarlyWithdrawalSheet(
+                deposit = deposit,
+                onDismiss = { showEarlyWithdrawalSheet = false },
+                onConfirm = {
+                    showEarlyWithdrawalSheet = false
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            val updated = deposit.copy(
+                                status = DepositStatus.EARLY_WITHDRAWN,
+                                updatedAt = System.currentTimeMillis()
+                            )
+                            storage.saveDeposit(updated)
+                        }
+                        onDeleted()
                     }
-                    onDeleted()
                 }
-            }
-        )
+            )
+        }
     }
 
     // ── 编辑备注对话框（仅弹窗编辑）──
