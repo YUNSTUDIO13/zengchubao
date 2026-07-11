@@ -355,7 +355,7 @@ private fun DonutChartWithLabels(
     }
 }
 
-// ── 标签 Canvas（独立一层，与圆环 Canvas 同坐标系）──
+// ── 标签 Canvas（两段折线：短径向+短水平 + y自动错开）──
 @Composable
 private fun DonutLabels(
     items: List<Triple<String, Double, Color>>,
@@ -363,10 +363,9 @@ private fun DonutLabels(
     density: androidx.compose.ui.unit.Density
 ) {
     val outerRpx = with(density) { 65.dp.toPx() }
-    val ringGap = with(density) { 8.dp.toPx() }      // 环外到拐点
-    val horizLen = with(density) { 44.dp.toPx() }     // 水平延伸
-    val labelGap = with(density) { 4.dp.toPx() }      // 标签距线尾
-    val staggerDp = with(density) { 10.dp.toPx() }    // y 错开
+    val radialLen = with(density) { 8.dp.toPx() }    // 段1: 径向延伸长度
+    val horizBase = with(density) { 18.dp.toPx() }    // 段2: 基础水平长度
+    val staggerH = with(density) { 14.sp.toPx() }     // y 错开高度
 
     Canvas(modifier = Modifier.fillMaxSize()) {
         val w = size.width; val h = size.height
@@ -376,52 +375,68 @@ private fun DonutLabels(
 
         val labelPaint = android.graphics.Paint().apply {
             color = android.graphics.Color.parseColor("#475569")
-            textSize = 6.sp.toPx()
+            textSize = 7.sp.toPx()
             isAntiAlias = true
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
         }
-        val placedYs = mutableListOf<Float>()
+        val occupied = mutableListOf<Pair<Float, Float>>() // (minY, maxY)
 
         var start = -90f
-        items.forEach { (name, value, color) ->
+        items.forEachIndexed { idx, (name, value, color) ->
             val sweep = ((value / total * 360f).coerceAtLeast(1.5)).toFloat()
             val mid = start + sweep / 2f
             val rad = Math.toRadians(mid.toDouble()).toFloat()
             val cosR = cos(rad); val sinR = sin(rad)
             val pct = "%.1f".format(value / total * 100)
-            val labelText = "$name $pct%"
 
-            // 段1: 环外沿角度到拐点
-            val bendDist = outerRpx + ringGap
-            val bx = cx + bendDist * cosR; val by = cy + bendDist * sinR
-            // 段2: 拐点水平到标签
             val goLeft = cosR < 0
-            val labelX = if (goLeft) bx - horizLen else bx + horizLen
-            var labelY = by
+            // 段1: 环边缘沿径向延伸 radialLen
+            val r1 = outerRpx
+            val r2 = outerRpx + radialLen
+            val x1 = cx + r1 * cosR; val y1 = cy + r1 * sinR
+            val x2 = cx + r2 * cosR; val y2 = cy + r2 * sinR
+
+            // 段2: 拐90°水平延伸 (基础 horizBase + 错位增量)
+            val conflict = occupied.any { kotlin.math.abs(y2 - it.first) < staggerH * 1.2f
+                || kotlin.math.abs(y2 - it.second) < staggerH * 1.2f }
+            val extra = if (conflict) horizBase * 1.4f else 0f
+            val hLen = horizBase + extra
+            val x3 = if (goLeft) x2 - hLen else x2 + hLen
+            val y3 = y2
 
             // 拉线
-            drawLine(color, Offset(cx + outerRpx * cosR, cy + outerRpx * sinR),
-                Offset(bx, by), strokeWidth = 1.2f)
-            drawLine(color, Offset(bx, by), Offset(labelX, labelY), strokeWidth = 1.2f)
+            drawLine(color, Offset(x1, y1), Offset(x2, y2), strokeWidth = 1.2f)
+            drawLine(color.copy(alpha = 0.6f), Offset(x2, y2), Offset(x3, y3), strokeWidth = 1.2f)
 
             // Y 错开
-            for (placed in placedYs) {
-                if (kotlin.math.abs(labelY - placed) < staggerDp * 1.5f) labelY += staggerDp
+            var adjustedY = y3
+            for ((lo, hi) in occupied) {
+                if (adjustedY in lo..hi || kotlin.math.abs(adjustedY - lo) < staggerH * 0.5f) {
+                    adjustedY = hi + staggerH * 0.8f
+                }
             }
-            placedYs.add(labelY)
-            val clampedX = labelX.coerceIn(4f, w - 4f)
-            val clampedY = labelY.coerceIn(8f, h - 8f)
+            val textH = labelPaint.textSize * 1.4f
+            occupied.add(adjustedY - textH * 0.6f to adjustedY + textH * 0.6f)
 
+            val clampedX = x3.coerceIn(4f, w - 4f)
+            val clampedY = adjustedY.coerceIn(staggerH, h - staggerH)
+
+            val labelText = "$name $pct%"
             val textW = labelPaint.measureText(labelText)
             val maxW = with(density) { 44.dp.toPx() }
             if (textW > maxW) {
                 labelPaint.textAlign = android.graphics.Paint.Align.CENTER
                 drawContext.canvas.nativeCanvas.drawText(name, clampedX, clampedY, labelPaint)
                 drawContext.canvas.nativeCanvas.drawText("$pct%", clampedX,
-                    clampedY + with(density) { 10.dp.toPx() }, labelPaint)
+                    clampedY + with(density) { 12.dp.toPx() }, labelPaint)
             } else {
                 labelPaint.textAlign = if (goLeft)
                     android.graphics.Paint.Align.RIGHT else android.graphics.Paint.Align.LEFT
                 drawContext.canvas.nativeCanvas.drawText(labelText, clampedX, clampedY, labelPaint)
+            }
+            // 水平线接回段2终点（当y被错开时）
+            if (kotlin.math.abs(adjustedY - y3) > 2f) {
+                drawLine(color.copy(alpha = 0.4f), Offset(x3, y3), Offset(clampedX, adjustedY), strokeWidth = 1f)
             }
             start += sweep
         }
