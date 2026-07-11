@@ -501,36 +501,25 @@ fun EarlyWithdrawalSheet(
     val normalMaturityInterest = deposit.maturityAmount - deposit.principal
     val lossAmount = normalMaturityInterest - result.interest
 
-    // 自定义 BottomSheet 容器（避开 Material3 ModalBottomSheet 默认 dragHandle）
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.3f))
-            .clickable { onDismiss() }
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = false,
+        confirmValueChange = { it != SheetValue.Hidden }
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        containerColor = Color.White,
+        dragHandle = { /* 无 drag handle */ }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.BottomCenter)
-                .background(Color.White, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                 .verticalScroll(rememberScrollState())
-                .clickable { /* 拦截冒泡 */ }
                 .padding(horizontal = 20.dp)
-                .padding(top = 8.dp, bottom = 32.dp)
+                .padding(bottom = 32.dp)
         ) {
-            // 状态栏占位
-            Spacer(Modifier.height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding()))
-            // 顶部 drag handle - 受 sheet 展开比例控制
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(Modifier.size(width = 40.dp, height = 4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(Gray200))
-            }
             Text("提前支取模拟器", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Gray900)
             Spacer(Modifier.height(4.dp))
             Text("传统标准：定期存款提前支取部分一律按支取日活期挂牌利率计息，采用实际天数计算。算头不算尾。",
