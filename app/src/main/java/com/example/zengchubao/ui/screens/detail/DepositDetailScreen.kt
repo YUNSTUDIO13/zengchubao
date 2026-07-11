@@ -388,21 +388,18 @@ fun DepositDetailScreen(
     }
 }
 
-// ── 距到期圆环（参考图：标签距到期→环(断弧)+天→数字 70）──
+// ── 距到期圆环（参考图：环+数字在上 + "距到期"标签在底部）──
 @Composable
 private fun DaysRing(daysLeft: Int, totalDays: Int) {
     val pct = if (totalDays > 0) (daysLeft.toFloat() / totalDays).coerceIn(0f, 1f) else 1f
-    val ringSizeDp = 56.dp
-    val strokeW = with(LocalDensity.current) { 4.dp.toPx() }
-    val r = with(LocalDensity.current) { ringSizeDp.toPx() / 2f } - strokeW / 2f
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        Text("距到期", fontSize = 10.sp, color = Gray400)
+    val ringSizeDp = 64.dp
+    val density = LocalDensity.current
+    val strokeW = with(density) { 4.dp.toPx() }
+    val r = with(density) { ringSizeDp.toPx() / 2f } - strokeW / 2f
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Canvas(modifier = Modifier.size(ringSizeDp)) {
                 val cx = size.width / 2; val cy = size.height / 2
@@ -412,15 +409,23 @@ private fun DaysRing(daysLeft: Int, totalDays: Int) {
                     style = Stroke(strokeW, cap = StrokeCap.Round))
                 drawContext.canvas.nativeCanvas.apply {
                     val p = android.graphics.Paint().apply {
-                        color = android.graphics.Color.parseColor("#8892A4")
-                        textSize = 9.sp.toPx()
+                        color = android.graphics.Color.parseColor("#1B4FD8")
+                        textSize = 14.sp.toPx()
+                        typeface = android.graphics.Typeface.DEFAULT_BOLD
                         isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER
                     }
-                    drawText("天", cx, cy + 3f, p)
+                    val lbl = android.graphics.Paint().apply {
+                        color = android.graphics.Color.parseColor("#8892A4")
+                        textSize = 8.sp.toPx()
+                        isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER
+                    }
+                    drawText("$daysLeft", cx, cy + 2f, p)
+                    drawText("天", cx, cy + 12f, lbl)
                 }
             }
-            Text("$daysLeft", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = BrandBlue)
         }
+        Spacer(Modifier.height(2.dp))
+        Text("距到期", fontSize = 10.sp, color = Gray400)
     }
 }
 
@@ -496,20 +501,34 @@ fun EarlyWithdrawalSheet(
     val normalMaturityInterest = deposit.maturityAmount - deposit.principal
     val lossAmount = normalMaturityInterest - result.interest
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        containerColor = Color.White
+    // 自定义 BottomSheet 容器（避开 Material3 ModalBottomSheet 默认 dragHandle）
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.3f))
+            .clickable { onDismiss() }
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .background(Color.White, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                 .verticalScroll(rememberScrollState())
+                .clickable { /* 拦截冒泡 */ }
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
         ) {
-            // Spacer 给顶部留呼吸空间
-            Spacer(Modifier.height(12.dp))
+            // 顶部 drag handle - 受 sheet 展开比例控制
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(Modifier.size(width = 40.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(Gray200))
+            }
             Text("提前支取模拟器", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Gray900)
             Spacer(Modifier.height(4.dp))
             Text("传统标准：定期存款提前支取部分一律按支取日活期挂牌利率计息，采用实际天数计算。算头不算尾。",
