@@ -1,6 +1,8 @@
 package com.example.zengchubao.ui.screens.management
 
+import android.Manifest
 import android.content.Intent
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -405,6 +407,23 @@ private fun colorToHexString(color: Color): String {
 
 @Composable
 private fun ReminderSettingsScreen(onBack: () -> Unit, settings: AppSettings, onSettingsChanged: (AppSettings) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // 通知权限
+    val hasNotificationPermission = if (Build.VERSION.SDK_INT >= 33)
+        android.content.pm.PackageManager.PERMISSION_GRANTED ==
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+    else true
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* 授权后不需要额外操作 */ }
+
+    LaunchedEffect(Unit) {
+        if (!hasNotificationPermission) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 90.dp)) {
         SubPageTopBar("到期提醒", onBack)
 
