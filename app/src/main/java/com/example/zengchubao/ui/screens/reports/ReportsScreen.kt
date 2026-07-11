@@ -363,19 +363,23 @@ private fun DonutLabels(
     density: androidx.compose.ui.unit.Density
 ) {
     val outerRpx = with(density) { 65.dp.toPx() }
-    val lineGap = with(density) { 10.dp.toPx() }
-    val lineLen = with(density) { 20.dp.toPx() }
-    val lineEnd = outerRpx + lineGap + lineLen
-    val labelGap = with(density) { 8.dp.toPx() }
+    val ringGap = with(density) { 8.dp.toPx() }      // 环外到拐点
+    val horizLen = with(density) { 44.dp.toPx() }     // 水平延伸
+    val labelGap = with(density) { 4.dp.toPx() }      // 标签距线尾
+    val staggerDp = with(density) { 10.dp.toPx() }    // y 错开
 
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val w = size.width
-        val h = size.height
-        val cx = w / 2f
-        val cy = h / 2f
-
+        val w = size.width; val h = size.height
+        val cx = w / 2f; val cy = h / 2f
         val total = items.sumOf { it.second }
         if (total <= 0) return@Canvas
+
+        val labelPaint = android.graphics.Paint().apply {
+            color = android.graphics.Color.parseColor("#475569")
+            textSize = 6.sp.toPx()
+            isAntiAlias = true
+        }
+        val placedYs = mutableListOf<Float>()
 
         var start = -90f
         items.forEach { (name, value, color) ->
@@ -383,34 +387,41 @@ private fun DonutLabels(
             val mid = start + sweep / 2f
             val rad = Math.toRadians(mid.toDouble()).toFloat()
             val cosR = cos(rad); val sinR = sin(rad)
-            val sx = cx + (outerRpx + lineGap) * cosR; val sy = cy + (outerRpx + lineGap) * sinR
-            val ex = cx + lineEnd * cosR; val ey = cy + lineEnd * sinR
-
-            drawLine(color, Offset(sx, sy), Offset(ex, ey), strokeWidth = 1.5f)
-
             val pct = "%.1f".format(value / total * 100)
             val labelText = "$name $pct%"
-            val labelPaint = android.graphics.Paint().apply {
-                this.color = android.graphics.Color.parseColor("#475569")
-                textSize = 6.sp.toPx()
-                isAntiAlias = true
+
+            // 段1: 环外沿角度到拐点
+            val bendDist = outerRpx + ringGap
+            val bx = cx + bendDist * cosR; val by = cy + bendDist * sinR
+            // 段2: 拐点水平到标签
+            val goLeft = cosR < 0
+            val labelX = if (goLeft) bx - horizLen else bx + horizLen
+            var labelY = by
+
+            // 拉线
+            drawLine(color, Offset(cx + outerRpx * cosR, cy + outerRpx * sinR),
+                Offset(bx, by), strokeWidth = 1.2f)
+            drawLine(color, Offset(bx, by), Offset(labelX, labelY), strokeWidth = 1.2f)
+
+            // Y 错开
+            for (placed in placedYs) {
+                if (kotlin.math.abs(labelY - placed) < staggerDp * 1.5f) labelY += staggerDp
             }
-            val lxRaw = cx + (lineEnd + labelGap) * cosR
-            val lyRaw = cy + (lineEnd + labelGap) * sinR
+            placedYs.add(labelY)
+            val clampedX = labelX.coerceIn(4f, w - 4f)
+            val clampedY = labelY.coerceIn(8f, h - 8f)
+
             val textW = labelPaint.measureText(labelText)
-            val maxW = with(density) { 50.dp.toPx() }
-            // 钳制到 canvas 边缘 (留 6dp buffer)
-            val bufferPx = with(density) { 6.dp.toPx() }
-            val lx = lxRaw.coerceIn(bufferPx, w - bufferPx)
-            val ly = lyRaw.coerceIn(bufferPx, h - bufferPx)
+            val maxW = with(density) { 44.dp.toPx() }
             if (textW > maxW) {
                 labelPaint.textAlign = android.graphics.Paint.Align.CENTER
-                drawContext.canvas.nativeCanvas.drawText(name, lx, ly, labelPaint)
-                drawContext.canvas.nativeCanvas.drawText("$pct%", lx, ly + with(density) { 12.dp.toPx() }, labelPaint)
+                drawContext.canvas.nativeCanvas.drawText(name, clampedX, clampedY, labelPaint)
+                drawContext.canvas.nativeCanvas.drawText("$pct%", clampedX,
+                    clampedY + with(density) { 10.dp.toPx() }, labelPaint)
             } else {
-                val align = if (cosR < 0) android.graphics.Paint.Align.RIGHT else android.graphics.Paint.Align.LEFT
-                labelPaint.textAlign = align
-                drawContext.canvas.nativeCanvas.drawText(labelText, lx, ly, labelPaint)
+                labelPaint.textAlign = if (goLeft)
+                    android.graphics.Paint.Align.RIGHT else android.graphics.Paint.Align.LEFT
+                drawContext.canvas.nativeCanvas.drawText(labelText, clampedX, clampedY, labelPaint)
             }
             start += sweep
         }
