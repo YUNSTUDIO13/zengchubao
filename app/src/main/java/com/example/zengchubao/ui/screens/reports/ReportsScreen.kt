@@ -257,7 +257,7 @@ private fun BankDistributionSection(
             }
         } else {
             // Donut 环形图
-            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxWidth().height(260.dp), contentAlignment = Alignment.Center) {
                 DonutChartWithLabels(
                     items = donutItems,
                     totalBalance = totalBalance,
@@ -308,8 +308,8 @@ private fun DonutChartWithLabels(
     )
 
     val density = LocalDensity.current
-    val outerRpx = with(density) { 65.dp.toPx() }
-    val strokeWpx = outerRpx * 0.36f
+    val outerRpx = with(density) { 50.dp.toPx() }
+    val strokeWpx = outerRpx * 0.32f
     val innerRpx = outerRpx - strokeWpx
     val lineGap = with(density) { 4.dp.toPx() }
     val lineLen = with(density) { 16.dp.toPx() }
@@ -346,12 +346,12 @@ private fun DonutChartWithLabels(
         val nc = drawContext.canvas.nativeCanvas
         val centerLabel = android.graphics.Paint().apply {
             color = android.graphics.Color.parseColor("#94A3B8")
-            textSize = 10.sp.toPx()
+            textSize = 8.sp.toPx()
             isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER
         }
         val centerValue = android.graphics.Paint().apply {
             color = android.graphics.Color.parseColor("#1E293B")
-            textSize = 12.sp.toPx()
+            textSize = 11.sp.toPx()
             typeface = android.graphics.Typeface.DEFAULT_BOLD
             isAntiAlias = true; textAlign = android.graphics.Paint.Align.CENTER
         }
