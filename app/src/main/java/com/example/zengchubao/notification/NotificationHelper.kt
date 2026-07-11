@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.example.zengchubao.model.AppSettings
 import com.example.zengchubao.model.DepositStatus
@@ -58,9 +57,6 @@ object NotificationHelper {
 
         if (count > 0) {
             Log.d(TAG, "scheduled $count alarms")
-            android.os.Handler(context.mainLooper).post {
-                Toast.makeText(context, "已设置 ${count} 个到期提醒", Toast.LENGTH_SHORT).show()
-            }
         }
         return count
     }
