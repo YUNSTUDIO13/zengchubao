@@ -27,7 +27,12 @@ object NotificationHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.getSystemService(NotificationManager::class.java).createNotificationChannel(
                 NotificationChannel(CHANNEL_ID, "存单到期提醒", NotificationManager.IMPORTANCE_HIGH)
-                    .apply { description = "存单到期前发送提醒" }
+                    .apply {
+                        description = "存单到期前发送提醒"
+                        enableVibration(true)
+                        enableLights(true)
+                        setBypassDnd(true)
+                    }
             )
         }
     }
@@ -129,6 +134,12 @@ class ReminderReceiver : BroadcastReceiver() {
         val notifyId = intent.getIntExtra("notify_id", 0)
 
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val launchPending = PendingIntent.getActivity(
+            context, 0,
+            context.packageManager.getLaunchIntentForPackage(context.packageName),
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_IMMUTABLE else 0
+        )
         nm.notify(notifyId, NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
@@ -136,6 +147,8 @@ class ReminderReceiver : BroadcastReceiver() {
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setFullScreenIntent(launchPending, true)
             .build()
         )
         Log.d(TAG, "notification posted: $title")

@@ -23,7 +23,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.zIndex
@@ -421,6 +422,10 @@ private fun ReminderSettingsScreen(onBack: () -> Unit, settings: AppSettings, on
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
     else true
 
+    // 电池优化权限
+    val pm = context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+    val hasBatteryExemption = pm.isIgnoringBatteryOptimizations(context.packageName)
+
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -530,6 +535,27 @@ private fun ReminderSettingsScreen(onBack: () -> Unit, settings: AppSettings, on
                 }
             }
         }
+        // 电池优化提示
+        if (settings.reminderEnabled && !hasBatteryExemption) {
+            Card(Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB))) {
+                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("⚡", fontSize = 14.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("关闭电池优化以保障提醒准时", fontSize = 11.sp, fontWeight = FontWeight.W600, color = Color(0xFF92400E))
+                        Text("开启后即使App未运行也能准时通知", fontSize = 9.sp, color = Color(0xFFA16207))
+                    }
+                    TextButton(onClick = {
+                        val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                            data = android.net.Uri.parse("package:${context.packageName}")
+                        }
+                        context.startActivity(intent)
+                    }) { Text("去设置", fontSize = 11.sp, color = Color(0xFFD97706)) }
+                }
+            }
+        }
         Spacer(Modifier.height(30.dp))
     }
 }
@@ -544,93 +570,81 @@ private fun TimePickerDialog(
     val hours = (0..23).toList()
     val minutes = (0..55 step 5).toList()
 
-    var selectedHour by remember { mutableStateOf(initialHour) }
-    var selectedMinute by remember { mutableStateOf(initialMinute) }
+    // 滚动视觉状态（与确认解耦）
+    val hourListState = rememberLazyListState(initialFirstVisibleItemIndex = (initialHour - 2).coerceAtLeast(0))
+    val minuteListState = rememberLazyListState(initialFirstVisibleItemIndex = (minutes.indexOf(initialMinute) - 2).coerceAtLeast(0))
+
+    val itemHPx = with(LocalDensity.current) { 40.dp.toPx() }
+    val visualHour by remember {
+        derivedStateOf {
+            (hourListState.firstVisibleItemIndex +
+                (hourListState.firstVisibleItemScrollOffset / itemHPx + 0.5f).toInt()
+            ).coerceIn(0, 23)
+        }
+    }
+    val visualMinuteIdx by remember {
+        derivedStateOf {
+            (minuteListState.firstVisibleItemIndex +
+                (minuteListState.firstVisibleItemScrollOffset / itemHPx + 0.5f).toInt()
+            ).coerceIn(0, minutes.size - 1)
+        }
+    }
+
+    // 确认时使用的值（仅按钮点击时更新）
+    var selectedHour by rememberSaveable { mutableStateOf(initialHour) }
+    var selectedMinute by rememberSaveable { mutableStateOf(initialMinute) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
         title = { Text("选择提醒时间", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B)) },
         text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.height(160.dp)
-                ) {
-                    // 选中指示条
-                    WheelPicker(
-                        items = hours.map { "${it}时" },
-                        selectedIndex = selectedHour,
-                        onIndexChanged = { selectedHour = it },
-                        modifier = Modifier.width(80.dp)
-                    )
-                    Text("：", fontSize = 20.sp, fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B),
-                        modifier = Modifier.padding(horizontal = 4.dp))
-                    WheelPicker(
-                        items = minutes.map { String.format("%02d分", it) },
-                        selectedIndex = selectedMinute,
-                        onIndexChanged = { selectedMinute = it },
-                        modifier = Modifier.width(80.dp)
-                    )
-                }
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.height(160.dp)
+            ) {
+                // 小时滚轮
+                WheelPickerVisual(
+                    items = hours.map { "${it}时" },
+                    listState = hourListState,
+                    centerIndex = visualHour,
+                    modifier = Modifier.width(80.dp)
+                )
+                Text("：", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B),
+                    modifier = Modifier.padding(horizontal = 4.dp))
+                // 分钟滚轮
+                WheelPickerVisual(
+                    items = minutes.map { String.format("%02d分", it) },
+                    listState = minuteListState,
+                    centerIndex = visualMinuteIdx,
+                    modifier = Modifier.width(80.dp)
+                )
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(selectedHour, minutes[selectedMinute]) }) {
-                Text("确认", color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
-            }
+            TextButton(onClick = {
+                selectedHour = visualHour
+                selectedMinute = minutes[visualMinuteIdx]
+                onConfirm(selectedHour, selectedMinute)
+            }) { Text("确认", color = Color(0xFF2563EB), fontWeight = FontWeight.Bold) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消", color = Color(0xFF94A3B8))
-            }
+            TextButton(onClick = onDismiss) { Text("取消", color = Color(0xFF94A3B8)) }
         }
     )
 }
 
-// ═════ 非闪烁滚动轮 ═════
+// ═════ 纯视觉滚轮（无状态回调，不触发父级重组）═════
 @Composable
-private fun WheelPicker(
+private fun WheelPickerVisual(
     items: List<String>,
-    selectedIndex: Int,
-    onIndexChanged: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-    itemH: Dp = 40.dp
+    listState: LazyListState,
+    centerIndex: Int,
+    modifier: Modifier = Modifier
 ) {
-    val density = LocalDensity.current
-    val itemHPx = with(density) { itemH.toPx() }
+    val itemH = 40.dp
     val visibleCount = 5
-
-    val listState = rememberLazyListState(
-        initialFirstVisibleItemIndex = (selectedIndex - visibleCount / 2).coerceAtLeast(0)
-    )
-
-    // 实时计算中间项索引
-    val centerIndex by remember {
-        derivedStateOf {
-            val offset = listState.firstVisibleItemScrollOffset
-            val idx = listState.firstVisibleItemIndex + (offset / itemHPx + 0.5f).toInt()
-            idx.coerceIn(0, items.size - 1)
-        }
-    }
-
-    // 仅用户滚动停止时通知父级（用 snapshotFlow 避免 LaunchedEffect 被取消）
-    LaunchedEffect(listState) {
-        snapshotFlow { listState.isScrollInProgress }
-            .collect { scrolling ->
-                if (!scrolling) {
-                    // 等一帧确保位置稳定，然后一次性同步吸附+通知
-                    kotlinx.coroutines.delay(50)
-                    if (!listState.isScrollInProgress) {
-                        val target = (centerIndex - visibleCount / 2).coerceIn(0, items.size - 1)
-                        listState.scrollToItem(target)
-                        onIndexChanged(centerIndex)
-                    }
-                }
-            }
-    }
 
     Box(modifier = modifier.height(itemH * visibleCount)) {
         LazyColumn(
@@ -642,22 +656,16 @@ private fun WheelPicker(
             item { Spacer(Modifier.height(itemH * (visibleCount / 2))) }
             items(items.size) { idx ->
                 val isCenter = idx == centerIndex
-                Box(
-                    Modifier.height(itemH).fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        items[idx],
+                Box(Modifier.height(itemH).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text(items[idx],
                         fontSize = if (isCenter) 18.sp else 14.sp,
                         fontWeight = if (isCenter) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isCenter) Color(0xFF1E293B) else Color(0xFF94A3B8)
-                    )
+                        color = if (isCenter) Color(0xFF1E293B) else Color(0xFF94A3B8))
                 }
             }
             item { Spacer(Modifier.height(itemH * (visibleCount / 2))) }
         }
 
-        // 上下渐变遮罩
         Box(Modifier.fillMaxWidth().height(itemH * 2).align(Alignment.TopCenter)
             .background(Brush.verticalGradient(listOf(Color.White, Color.Transparent))))
         Box(Modifier.fillMaxWidth().height(itemH * 2).align(Alignment.BottomCenter)
