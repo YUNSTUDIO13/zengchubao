@@ -75,7 +75,7 @@ object NotificationHelper {
         val targetDateTime = LocalDateTime.of(targetDate, LocalTime.of(hour, minute))
         val triggerMillis = targetDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
-        if (triggerMillis <= System.currentTimeMillis() + 3000) {
+        if (triggerMillis <= System.currentTimeMillis() + 1000) {
             Log.d(TAG, "skip past: ${dep.productName}")
             return
         }
@@ -83,8 +83,8 @@ object NotificationHelper {
         val body = "${dep.productName}（${dep.bankName}）将于${dep.endDate}到期，本金 ¥${"%.2f".format(dep.principal)}"
         val requestCode = dep.id.hashCode()
 
+        // v3.52 能工作的最简单 Intent：只有 extras，无 action/data
         val intent = Intent(context, ReminderReceiver::class.java).apply {
-            action = "com.example.zengchubao.REMIND"
             putExtra("title", "存单到期提醒")
             putExtra("body", body)
             putExtra("notify_id", requestCode)
@@ -96,12 +96,18 @@ object NotificationHelper {
         val pending = PendingIntent.getBroadcast(context, requestCode, intent, flags)
 
         val alarmMgr = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        // setAlarmClock: 系统闹钟级别，Doze/省电模式均放行，不开app也能触发
-        val showIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-        val showPi = PendingIntent.getActivity(context, requestCode + 10000, showIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or
-                if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_IMMUTABLE else 0)
-        alarmMgr.setAlarmClock(AlarmManager.AlarmClockInfo(triggerMillis, showPi), pending)
+        try {
+            if (Build.VERSION.SDK_INT >= 31) {
+                alarmMgr.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMillis, pending)
+            } else if (Build.VERSION.SDK_INT >= 19) {
+                alarmMgr.setExact(AlarmManager.RTC_WAKEUP, triggerMillis, pending)
+            } else {
+                alarmMgr.set(AlarmManager.RTC_WAKEUP, triggerMillis, pending)
+            }
+        } catch (e: SecurityException) {
+            Log.e(TAG, "fallback to inexact alarm", e)
+            alarmMgr.set(AlarmManager.RTC_WAKEUP, triggerMillis, pending)
+        }
 
         Log.d(TAG, "alarm SET: ${dep.productName} @ $targetDateTime (in ${(triggerMillis - System.currentTimeMillis()) / 1000}s)")
     }
@@ -114,9 +120,8 @@ object NotificationHelper {
             if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_IMMUTABLE else 0
         deposits.forEach { dep ->
             val requestCode = dep.id.hashCode()
-            // 用与 scheduleOne 完全一致的 Intent 结构（含 extras）才能匹配到同一个 PendingIntent
+            // 与 scheduleOne 完全一致的 Intent 结构（无 action）
             val intent = Intent(context, ReminderReceiver::class.java).apply {
-                action = "com.example.zengchubao.REMIND"
                 putExtra("title", "存单到期提醒")
                 putExtra("body", "")
                 putExtra("notify_id", requestCode)
