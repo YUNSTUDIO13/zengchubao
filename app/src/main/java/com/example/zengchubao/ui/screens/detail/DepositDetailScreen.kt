@@ -283,7 +283,7 @@ fun DepositDetailScreen(
             if (deposit.status == DepositStatus.HOLDING) {
                 ActionButton(
                     onClick = { showEarlyWithdrawalSheet = true },
-                    bgColor = Amber50, borderColor = AmberBg, contentColor = Amber600,
+                    bgColor = Amber50, borderColor = Amber500.copy(alpha = 0.25f), contentColor = Amber600,
                     icon = { Icon(Icons.Outlined.FlashOn, null, tint = Amber600, modifier = Modifier.size(16.dp)) },
                     text = "提前支取模拟器"
                 )
@@ -304,7 +304,7 @@ fun DepositDetailScreen(
             // 删除
             ActionButton(
                 onClick = { showDeleteDialog = true },
-                bgColor = Red50, borderColor = RedBg, contentColor = Red500,
+                bgColor = Red50, borderColor = Red500.copy(alpha = 0.25f), contentColor = Red500,
                 icon = { Icon(Icons.Outlined.Delete, null, tint = Red500, modifier = Modifier.size(16.dp)) },
                 text = "删除存单"
             )
