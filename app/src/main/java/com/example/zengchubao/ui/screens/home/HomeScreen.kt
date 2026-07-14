@@ -145,6 +145,14 @@ fun HomeScreen(
 
             item { Spacer(Modifier.height(10.dp)) }
 
+            // ── 我的存单 标题 ──
+            item {
+                Text("我的存单", fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1E293B), modifier = Modifier.padding(horizontal = 18.dp))
+            }
+
+            item { Spacer(Modifier.height(8.dp)) }
+
             // ── 时间筛选胶囊 + 银行筛选折叠按钮（同一行）──
             item {
                 val today = todayString()
@@ -158,7 +166,7 @@ fun HomeScreen(
                 }
                 Column(modifier = Modifier.padding(horizontal = 18.dp).fillMaxWidth()) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                        // 左侧：时间筛选胶囊（比 PillChip 略小）
+                        // 左侧：时间筛选胶囊
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             TimePillChip("全部${bankFiltered.size}", timeFilter == 0, Color(0xFF0E1B4D)) { timeFilter = 0 }
                             TimePillChip("本月$monthCount", timeFilter == 1, Color(0xFF9499B8)) { timeFilter = 1 }
@@ -180,7 +188,7 @@ fun HomeScreen(
                             )
                         }
                     }
-                    // 展开：全部 + 银行名（左对齐）
+                    // 展开：全部 + 银行名（左对齐，与时间胶囊大小一致）
                     AnimatedVisibility(
                         visible = bankFilterExpanded,
                         enter = expandVertically() + fadeIn(),
@@ -191,24 +199,16 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            PillChip("全部", selectedBanks.isEmpty()) { selectedBanks = emptySet() }
+                            TimePillChip("全部", selectedBanks.isEmpty(), Color(0xFF64748B)) { selectedBanks = emptySet() }
                             bankNames.forEach { bank ->
                                 val sel = bank in selectedBanks
-                                PillChip(bank, sel) {
+                                TimePillChip(bank, sel, Color(0xFF64748B)) {
                                     selectedBanks = if (sel) selectedBanks - bank else selectedBanks + bank
                                 }
                             }
                         }
                     }
                 }
-            }
-
-            item { Spacer(Modifier.height(12.dp)) }
-
-            // ── 我的存单 标题 ──
-            item {
-                Text("我的存单", fontSize = 15.sp, fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E293B), modifier = Modifier.padding(horizontal = 18.dp))
             }
 
             item { Spacer(Modifier.height(8.dp)) }

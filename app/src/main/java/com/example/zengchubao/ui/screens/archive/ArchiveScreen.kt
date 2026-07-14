@@ -60,7 +60,7 @@ fun ArchiveScreen(
 
     var expandedId by remember { mutableStateOf<String?>(null) }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF4F6FB))) {
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF4F6FB)).statusBarsPadding()) {
         // ── 顶部标题栏（带返回）──
         Row(
             modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 20.dp, top = 12.dp, bottom = 4.dp),

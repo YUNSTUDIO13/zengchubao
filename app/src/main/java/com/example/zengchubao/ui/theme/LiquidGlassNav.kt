@@ -151,7 +151,7 @@ fun BottomNavBar(
                     ) { onNewDeposit() }
             ) {
                 Icon(
-                    imageVector = Icons.Filled.RestaurantMenu,
+                    imageVector = Icons.Filled.Add,
                     contentDescription = "新建存单",
                     tint = Color(0xFF9CA3AF),
                     modifier = Modifier.size(24.dp)
