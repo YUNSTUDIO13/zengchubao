@@ -251,13 +251,12 @@ private fun HeroMetric(label: String, value: String, modifier: Modifier = Modifi
 
 @Composable
 fun PillChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(percent = 50)
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(22.dp))
+            .clip(shape)
             .background(if (selected) Color(0xFF1E293B) else Color.White)
-            .border(if (selected) 1.dp else 0.6.dp,
-                if (selected) Color(0xFF1E293B) else Color(0xFFE2E8F0),
-                RoundedCornerShape(22.dp))
+            .border(1.dp, if (selected) Color(0xFF1E293B) else Color(0xFFE2E8F0), shape)
             .clickable { onClick() }
             .padding(horizontal = 13.dp, vertical = 5.dp)
     ) {
@@ -270,13 +269,12 @@ fun PillChip(label: String, selected: Boolean, onClick: () -> Unit) {
 
 @Composable
 fun TimePillChip(label: String, selected: Boolean, activeTextColor: Color, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(percent = 50)
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(shape)
             .background(if (selected) Color(0xFF1E293B) else Color.White)
-            .border(if (selected) 1.dp else 0.6.dp,
-                if (selected) Color(0xFF1E293B) else Color(0xFFE2E8F0),
-                RoundedCornerShape(20.dp))
+            .border(1.dp, if (selected) Color(0xFF1E293B) else Color(0xFFE2E8F0), shape)
             .clickable { onClick() }
             .padding(horizontal = 10.dp, vertical = 0.dp)
     ) {
