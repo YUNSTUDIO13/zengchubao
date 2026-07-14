@@ -80,7 +80,8 @@ fun ReportsScreen(
     onDailyDetail: () -> Unit = {},
     onAnnualDetail: () -> Unit = {},
     onMaturityDetail: () -> Unit = {},
-    onAccumulatedDetail: () -> Unit = {}
+    onAccumulatedDetail: () -> Unit = {},
+    onArchiveClick: () -> Unit = {}
 ) {
     val holding = remember(deposits) { deposits.filter { it.status == DepositStatus.HOLDING } }
     val assetBalance = remember(holding) { calculateAssetBalance(holding) }
@@ -144,7 +145,8 @@ fun ReportsScreen(
                         onDailyDetail = onDailyDetail,
                         onAnnualDetail = onAnnualDetail,
                         onMaturityDetail = onMaturityDetail,
-                        onAccumulatedDetail = onAccumulatedDetail
+                        onAccumulatedDetail = onAccumulatedDetail,
+                        onArchiveClick = onArchiveClick
                     )
                     "bankDistribution" -> BankDistributionSection(
                         bankGroups = bankGroups,
@@ -186,7 +188,8 @@ private fun AssetOverviewSection(
     onDailyDetail: () -> Unit = {},
     onAnnualDetail: () -> Unit = {},
     onMaturityDetail: () -> Unit = {},
-    onAccumulatedDetail: () -> Unit = {}
+    onAccumulatedDetail: () -> Unit = {},
+    onArchiveClick: () -> Unit = {}
 ) {
     val rateText = "${dailyRate}"
     Card(
@@ -215,7 +218,7 @@ private fun AssetOverviewSection(
             Spacer(Modifier.height(3.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                 AssetField("综合年化率", weightedRateText, Modifier.weight(1f))
-                AssetField("归档历史收益", fmt(archivedYield), Modifier.weight(1f))
+                AssetField("归档历史收益", fmt(archivedYield), Modifier.weight(1f), onClick = onArchiveClick)
             }
         }
     }

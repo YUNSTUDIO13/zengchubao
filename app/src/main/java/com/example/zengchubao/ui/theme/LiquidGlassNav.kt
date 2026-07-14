@@ -31,101 +31,131 @@ enum class AppTab(
 ) {
     HOME("存单", Icons.Filled.Home, Icons.Outlined.Home),
     REPORTS("报表", Icons.Filled.BarChart, Icons.Outlined.BarChart),
-    ARCHIVE("归档", Icons.Filled.Archive, Icons.Outlined.Archive),
     MANAGE("管理", Icons.Filled.Settings, Icons.Outlined.Settings)
 }
 
-// ═════════════════════════ 悬浮白色底部导航栏 v2.2 ═════════════════════════
+// ═════════════════════════ 悬浮白色底部导航栏 v2.3 ═════════════════════════
 // 特征：
-//   - 浮丸容器为纯白实底，宽度只占中间一部分，左右/下方区域透明
+//   - 浮丸容器为纯白实底（左侧约 75% 宽度），承载 3 个 Tab
+//   - 右侧独立圆形「新建」按钮（带图标）
 //   - 保留灰色滑动选中胶囊
-//   - 选中态底色随切换无极滑动（animateDpAsState）
 
 @Composable
-fun BottomNavBar(currentTab: AppTab, onTabSelected: (AppTab) -> Unit, modifier: Modifier = Modifier) {
+fun BottomNavBar(
+    currentTab: AppTab,
+    onTabSelected: (AppTab) -> Unit,
+    onNewDeposit: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(start = 28.dp, end = 28.dp, bottom = 22.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
-        // 浮动药丸容器：纯白实底 + 阴影（仅中间区域，外部透明）
-        Surface(
-            modifier = Modifier
-                .height(52.dp)
-                .fillMaxWidth()
-                .shadow(elevation = 14.dp, shape = RoundedCornerShape(26.dp), ambientColor = Color(0x28000000)),
-            color = Color.White,
-            shape = RoundedCornerShape(26.dp),
-            shadowElevation = 0.dp,
-            tonalElevation = 0.dp
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            BoxWithConstraints(
-                modifier = Modifier.fillMaxSize().padding(4.dp)
+            // ── 左侧：浮丸容器（3 Tab）──
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp)
+                    .shadow(elevation = 14.dp, shape = RoundedCornerShape(26.dp), ambientColor = Color(0x28000000)),
+                color = Color.White,
+                shape = RoundedCornerShape(26.dp),
+                shadowElevation = 0.dp,
+                tonalElevation = 0.dp
             ) {
-                val tabCount = AppTab.entries.size
-                val tabWidth = maxWidth / tabCount
-                val indicatorHorizontalPadding = 4.dp
-                val indicatorWidth = tabWidth - indicatorHorizontalPadding * 2
-                val selectedIndex = AppTab.entries.indexOf(currentTab)
-
-                val indicatorOffset by animateDpAsState(
-                    targetValue = when (selectedIndex) {
-                        0 -> indicatorHorizontalPadding
-                        1 -> indicatorHorizontalPadding + tabWidth
-                        2 -> indicatorHorizontalPadding + tabWidth * 2
-                        3 -> indicatorHorizontalPadding + tabWidth * 3
-                        else -> indicatorHorizontalPadding
-                    },
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-                    label = "indicatorOffset"
-                )
-
-                // 滑动灰色胶囊（与容器同弧度）
-                Box(
-                    modifier = Modifier
-                        .offset(x = indicatorOffset)
-                        .width(indicatorWidth)
-                        .height(44.dp)
-                        .clip(RoundedCornerShape(26.dp))
-                        .background(Color(0xFFE5E7EB))
-                        .align(Alignment.CenterStart)
-                )
-
-                // Tab icons
-                Row(
-                    Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxSize().padding(4.dp)
                 ) {
-                    AppTab.entries.forEach { tab ->
-                        val selected = currentTab == tab
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clickable(
-                                    indication = null,
-                                    interactionSource = remember { MutableInteractionSource() }
-                                ) { onTabSelected(tab) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            val tint = if (selected) Color(0xFF374151) else Color(0xFF9CA3AF)
-                            Crossfade(
-                                targetState = selected,
-                                animationSpec = tween(durationMillis = 200),
-                                label = "iconCrossfade"
-                            ) { sel ->
-                                Icon(
-                                    imageVector = if (sel) tab.selectedIcon else tab.unselectedIcon,
-                                    contentDescription = tab.label,
-                                    tint = tint,
-                                    modifier = Modifier.size(24.dp)
-                                )
+                    val tabCount = AppTab.entries.size
+                    val tabWidth = maxWidth / tabCount
+                    val indicatorHorizontalPadding = 4.dp
+                    val indicatorWidth = tabWidth - indicatorHorizontalPadding * 2
+                    val selectedIndex = AppTab.entries.indexOf(currentTab)
+
+                    val indicatorOffset by animateDpAsState(
+                        targetValue = when (selectedIndex) {
+                            0 -> indicatorHorizontalPadding
+                            1 -> indicatorHorizontalPadding + tabWidth
+                            2 -> indicatorHorizontalPadding + tabWidth * 2
+                            else -> indicatorHorizontalPadding
+                        },
+                        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                        label = "indicatorOffset"
+                    )
+
+                    // 滑动灰色胶囊（与容器同弧度）
+                    Box(
+                        modifier = Modifier
+                            .offset(x = indicatorOffset)
+                            .width(indicatorWidth)
+                            .height(44.dp)
+                            .clip(RoundedCornerShape(26.dp))
+                            .background(Color(0xFFE5E7EB))
+                            .align(Alignment.CenterStart)
+                    )
+
+                    // Tab icons
+                    Row(
+                        Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AppTab.entries.forEach { tab ->
+                            val selected = currentTab == tab
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .clickable(
+                                        indication = null,
+                                        interactionSource = remember { MutableInteractionSource() }
+                                    ) { onTabSelected(tab) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val tint = if (selected) Color(0xFF374151) else Color(0xFF9CA3AF)
+                                Crossfade(
+                                    targetState = selected,
+                                    animationSpec = tween(durationMillis = 200),
+                                    label = "iconCrossfade"
+                                ) { sel ->
+                                    Icon(
+                                        imageVector = if (sel) tab.selectedIcon else tab.unselectedIcon,
+                                        contentDescription = tab.label,
+                                        tint = tint,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
+            }
+
+            // ── 右侧：独立「新建」圆形按钮（与其他 tab 按钮同色）──
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(52.dp)
+                    .shadow(elevation = 14.dp, shape = RoundedCornerShape(26.dp), ambientColor = Color(0x28000000))
+                    .clip(RoundedCornerShape(26.dp))
+                    .background(Color.White)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) { onNewDeposit() }
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.RestaurantMenu,
+                    contentDescription = "新建存单",
+                    tint = Color(0xFF9CA3AF),
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }

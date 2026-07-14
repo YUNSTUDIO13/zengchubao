@@ -6,6 +6,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,6 +32,7 @@ private fun fmtI(v: Double) = "¥${CN_INT.format(v)}"
 fun ArchiveScreen(
     archiveRecords: List<ArchiveRecord>,
     deposits: List<Deposit>,
+    onBack: () -> Unit = {},
     onDepositClick: (String) -> Unit = {}
 ) {
     val archived = remember(deposits) { deposits.filter { it.status == DepositStatus.ARCHIVED } }
@@ -58,12 +60,29 @@ fun ArchiveScreen(
 
     var expandedId by remember { mutableStateOf<String?>(null) }
 
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 90.dp)) {
-        // ── Figma 头部 ──
-        Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 16.dp)) {
-            Text("归档", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
-            Text("历史收益回顾", fontSize = 10.sp, color = Color(0xFF94A3B8))
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF4F6FB))) {
+        // ── 顶部标题栏（带返回）──
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 20.dp, top = 12.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "返回",
+                    tint = Color(0xFF1E293B),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Spacer(Modifier.width(4.dp))
+            Column {
+                Text("归档", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B), lineHeight = 19.sp)
+                Spacer(Modifier.height(2.dp))
+                Text("历史收益回顾", fontSize = 10.sp, lineHeight = 10.sp, color = Color(0xFF94A3B8))
+            }
         }
+
+        Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 90.dp)) {
 
         // ── Figma Hero 卡片 ──
         Box(
@@ -213,5 +232,6 @@ fun ArchiveScreen(
         }
 
         Spacer(Modifier.height(40.dp))
+        }
     }
 }

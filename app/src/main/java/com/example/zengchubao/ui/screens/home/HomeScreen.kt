@@ -45,6 +45,7 @@ private fun fmtD(v: Double) = CN.format(v)
 
 // ── 首页（1:1 精细复刻） ──
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     deposits: List<Deposit>,
@@ -62,6 +63,7 @@ fun HomeScreen(
     val bankNames = remember(holdingDeposits) { holdingDeposits.map { it.bankName }.distinct() }
     var selectedBanks by remember { mutableStateOf<Set<String>>(emptySet()) }
     var timeFilter by remember { mutableIntStateOf(0) } // 0=全部, 1=本月, 2=本年
+    var bankFilterExpanded by remember { mutableStateOf(false) }
 
     val bankFiltered = remember(holdingDeposits, selectedBanks) {
         if (selectedBanks.isEmpty()) holdingDeposits
@@ -103,24 +105,11 @@ fun HomeScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF4F6FB))) {
-        // ── 顶部标题栏 ──
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(start = 18.dp, end = 14.dp, top = 12.dp, bottom = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text("财迹FinTrace", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B), lineHeight = 19.sp)
-                Spacer(Modifier.height(2.dp))
-                Text("跨行存单，一览全迹", fontSize = 10.sp, lineHeight = 10.sp, color = Color(0xFF94A3B8))
-            }
-            Box(contentAlignment = Alignment.Center,
-                modifier = Modifier.size(36.dp)
-                    .shadow(3.dp, CircleShape, ambientColor = Color(0x1A000000))
-                    .clip(CircleShape).background(Color(0xFF1E293B))
-                    .clickable { onNewDeposit() }) {
-                Icon(Icons.Filled.Add, "新建", tint = Color.White, modifier = Modifier.size(18.dp))
-            }
+        // ── 顶部标题栏（新建按钮已移至 tab 栏最右侧）──
+        Column(modifier = Modifier.padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 4.dp)) {
+            Text("财迹FinTrace", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B), lineHeight = 19.sp)
+            Spacer(Modifier.height(2.dp))
+            Text("跨行存单，一览全迹", fontSize = 10.sp, lineHeight = 10.sp, color = Color(0xFF94A3B8))
         }
 
         LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 90.dp)) {
@@ -156,7 +145,7 @@ fun HomeScreen(
 
             item { Spacer(Modifier.height(10.dp)) }
 
-            // ── 统计小卡片（上版本 UI：标题上，数值下） ──
+            // ── 时间筛选胶囊 + 银行筛选折叠按钮（同一行）──
             item {
                 val today = todayString()
                 val currentMonth = today.take(7)
@@ -167,41 +156,58 @@ fun HomeScreen(
                 val yearCount = remember(bankFiltered) {
                     bankFiltered.count { it.endDate.startsWith(currentYear) }
                 }
-                Row(modifier = Modifier.padding(start = 18.dp, end = 18.dp).fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatMiniCard("全部", "${bankFiltered.size}",
-                        selected = timeFilter == 0, modifier = Modifier.weight(1f),
-                        onClick = { timeFilter = 0 })
-                    StatMiniCard("本月到期", "$monthCount",
-                        selected = timeFilter == 1, modifier = Modifier.weight(1f),
-                        textColor = Color(0xFF9499B8), onClick = { timeFilter = 1 })
-                    StatMiniCard("本年到期", "$yearCount",
-                        selected = timeFilter == 2, modifier = Modifier.weight(1f),
-                        textColor = Color(0xFFC8953A), onClick = { timeFilter = 2 })
-                }
-            }
-
-            item { Spacer(Modifier.height(9.dp)) }
-
-            // ── 银行筛选 Chips ──
-            item {
-                Row(modifier = Modifier.padding(horizontal = 18.dp).horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    PillChip("全部", selectedBanks.isEmpty()) { selectedBanks = emptySet() }
-                    bankNames.forEach { bank ->
-                        val sel = bank in selectedBanks
-                        PillChip(bank, sel) {
-                            selectedBanks = if (sel) selectedBanks - bank else selectedBanks + bank
+                Column(modifier = Modifier.padding(horizontal = 18.dp).fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                        // 左侧：时间筛选胶囊（比 PillChip 略小）
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            TimePillChip("全部${bankFiltered.size}", timeFilter == 0, Color(0xFF0E1B4D)) { timeFilter = 0 }
+                            TimePillChip("本月$monthCount", timeFilter == 1, Color(0xFF9499B8)) { timeFilter = 1 }
+                            TimePillChip("本年$yearCount", timeFilter == 2, Color(0xFFC8953A)) { timeFilter = 2 }
+                        }
+                        Spacer(Modifier.weight(1f))
+                        // 右侧：银行筛选 圆形按钮
+                        Box(
+                            modifier = Modifier.size(22.dp).clip(CircleShape).background(Color.White)
+                                .border(0.6.dp, Color(0xFFE2E8F0), CircleShape)
+                                .clickable { bankFilterExpanded = !bankFilterExpanded },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (bankFilterExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                                contentDescription = "银行筛选",
+                                tint = Color(0xFF64748B),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                    // 展开：全部 + 银行名（左对齐）
+                    AnimatedVisibility(
+                        visible = bankFilterExpanded,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        androidx.compose.foundation.layout.FlowRow(
+                            modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            PillChip("全部", selectedBanks.isEmpty()) { selectedBanks = emptySet() }
+                            bankNames.forEach { bank ->
+                                val sel = bank in selectedBanks
+                                PillChip(bank, sel) {
+                                    selectedBanks = if (sel) selectedBanks - bank else selectedBanks + bank
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            item { Spacer(Modifier.height(9.dp)) }
+            item { Spacer(Modifier.height(12.dp)) }
 
-            // ── 持有列表标题 ──
+            // ── 我的存单 标题 ──
             item {
-                Text("持有列表", fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                Text("我的存单", fontSize = 15.sp, fontWeight = FontWeight.Bold,
                     color = Color(0xFF1E293B), modifier = Modifier.padding(horizontal = 18.dp))
             }
 
@@ -253,6 +259,21 @@ fun PillChip(label: String, selected: Boolean, onClick: () -> Unit) {
         Text(label, fontSize = 11.sp, fontWeight = FontWeight.W600,
             color = if (selected) Color.White else Color(0xFF64748B),
             modifier = Modifier.padding(horizontal = 13.dp, vertical = 5.dp))
+    }
+}
+
+// ── 时间筛选 小号药丸 Chip（比 PillChip 略小）──
+
+@Composable
+fun TimePillChip(label: String, selected: Boolean, activeTextColor: Color, onClick: () -> Unit) {
+    Surface(onClick = onClick, shape = RoundedCornerShape(20.dp),
+        color = if (selected) Color(0xFF1E293B) else Color.White,
+        border = BorderStroke(if (selected) 1.dp else 0.6.dp,
+            if (selected) Color(0xFF1E293B) else Color(0xFFE2E8F0)),
+        shadowElevation = 0.dp) {
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.W600,
+            color = if (selected) Color.White else activeTextColor,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
     }
 }
 

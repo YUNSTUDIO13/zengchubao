@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
 sealed class Screen {
     data object Main : Screen()
     data object NewDeposit : Screen()
+    data object Archive : Screen()
     data class DepositDetail(val depositId: String) : Screen()
     data class EditDeposit(val depositId: String) : Screen()
     data class EarningsBreakdown(val mode: String) : Screen()  // "daily" | "annual" | "accumulated"
@@ -122,6 +123,7 @@ fun ZengChuBaoApp() {
         is Screen.EditDeposit -> 2
         is Screen.DepositDetail -> 3
         is Screen.EarningsBreakdown -> 4
+        Screen.Archive -> 5
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -142,11 +144,12 @@ fun ZengChuBaoApp() {
                                 currentTab = currentTab,
                                 onTabSelected = { tab ->
                                     currentTab = tab
-                                    // 切换到首页或归档时自动触发归档检查
-                                    if (tab == AppTab.HOME || tab == AppTab.ARCHIVE) {
+                                    // 切换到首页时自动触发归档检查
+                                    if (tab == AppTab.HOME) {
                                         scope.launch { refreshData() }
                                     }
-                                }
+                                },
+                                onNewDeposit = { currentScreen = Screen.NewDeposit }
                             )
                         },
                         containerColor = androidx.compose.ui.graphics.Color(0xFFF0F4F8)
@@ -177,14 +180,8 @@ fun ZengChuBaoApp() {
                                     onDailyDetail = { currentScreen = Screen.EarningsBreakdown("daily") },
                                     onAnnualDetail = { currentScreen = Screen.EarningsBreakdown("annual") },
                                     onMaturityDetail = { currentScreen = Screen.EarningsBreakdown("maturity") },
-                                    onAccumulatedDetail = { currentScreen = Screen.EarningsBreakdown("accumulated") }
-                                )
-                                AppTab.ARCHIVE -> ArchiveScreen(
-                                    archiveRecords = archiveRecords,
-                                    deposits = deposits,
-                                    onDepositClick = { depositId ->
-                                        currentScreen = Screen.DepositDetail(depositId)
-                                    }
+                                    onAccumulatedDetail = { currentScreen = Screen.EarningsBreakdown("accumulated") },
+                                    onArchiveClick = { currentScreen = Screen.Archive }
                                 )
                                 AppTab.MANAGE -> ManagementScreen(
                                     deposits = deposits,
@@ -270,6 +267,16 @@ fun ZengChuBaoApp() {
                         deposits = deposits,
                         mode = mode,
                         onBack = { currentScreen = Screen.Main }
+                    )
+                }
+                Screen.Archive -> {
+                    ArchiveScreen(
+                        archiveRecords = archiveRecords,
+                        deposits = deposits,
+                        onBack = { currentScreen = Screen.Main },
+                        onDepositClick = { depositId ->
+                            currentScreen = Screen.DepositDetail(depositId)
+                        }
                     )
                 }
             }
