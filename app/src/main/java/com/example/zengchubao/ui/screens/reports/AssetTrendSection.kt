@@ -58,21 +58,32 @@ private fun computeMonthlyData(deposits: List<Deposit>, year: Int): List<MonthDa
         val rawEnd = String.format(Locale.CHINA, "%04d-%02d-%02d", year, m, lastDay)
         val cutoff = if (year == today.take(4).toIntOrNull() && m == today.substring(5,7).toIntOrNull()) today else rawEnd
         val monthEnd = if (cutoff <= rawEnd) cutoff else rawEnd
-        val holdingPrincipal = deposits
-            .filter { it.startDate <= monthEnd && it.status == DepositStatus.HOLDING }
-            .sumOf { it.principal }
-        val holdingAccrued = deposits.filter { it.status == DepositStatus.HOLDING }
-            .sumOf {
-                val elapsed = maxOf(0, minOf(daysBetween(it.startDate, monthEnd), it.termDays))
-                it.principal * (it.annualRate / 100.0) * (elapsed.toDouble() / yearBasis(it.calcMethod))
-            }
+
+        // 持有中且未到期的存单（本金 + 持续计息）
+        val activeHolding = deposits.filter {
+            it.status == DepositStatus.HOLDING && it.startDate <= monthEnd && it.endDate > monthEnd
+        }
+        val holdingPrincipal = activeHolding.sumOf { it.principal }
+        val holdingAccrued = activeHolding.sumOf {
+            val elapsed = maxOf(0, minOf(daysBetween(it.startDate, monthEnd), it.termDays))
+            it.principal * (it.annualRate / 100.0) * (elapsed.toDouble() / yearBasis(it.calcMethod))
+        }
+
+        // 已到期但未归档的存单（到期后不再计入资产，但收益已锁定）
+        val maturedHolding = deposits.filter {
+            it.status == DepositStatus.HOLDING && it.endDate <= monthEnd
+        }
+        val maturedHoldingYield = maturedHolding.sumOf { it.maturityAmount - it.principal }
+
+        // 已归档存单的到期收益
         val archivedYield = deposits
             .filter { it.status != DepositStatus.HOLDING && it.endDate <= monthEnd }
             .sumOf { it.maturityAmount - it.principal }
+
         result.add(
             MonthData(
                 totalAssets = holdingPrincipal + holdingAccrued,
-                netProfit = holdingAccrued + archivedYield
+                netProfit = holdingAccrued + maturedHoldingYield + archivedYield
             )
         )
     }
