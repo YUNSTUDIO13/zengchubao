@@ -147,10 +147,8 @@ fun ZengChuBaoApp() {
         ) { screen ->
             when (screen) {
                 is Screen.Main -> {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Scaffold(
-                            containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                            bottomBar = {
+                    Scaffold(
+                        bottomBar = {
                             BottomNavBar(
                                 currentTab = currentTab,
                                 onTabSelected = { tab ->
@@ -172,7 +170,8 @@ fun ZengChuBaoApp() {
                                 },
                                 onNewDeposit = { currentScreen = Screen.NewDeposit }
                             )
-                        }
+                        },
+                        containerColor = androidx.compose.ui.graphics.Color(0xFFF4F6FB)
                     ) { paddingValues ->
                         Box(
                             modifier = Modifier.padding(
@@ -223,7 +222,6 @@ fun ZengChuBaoApp() {
                                 )
                             }
                         }
-                    }
                     }
                 }
                 is Screen.NewDeposit -> {

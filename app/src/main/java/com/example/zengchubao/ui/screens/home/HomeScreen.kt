@@ -106,19 +106,7 @@ fun HomeScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    Box(modifier = Modifier.fillMaxSize().drawBehind {
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFFF4F6FB).copy(alpha = 0.92f),
-                    Color(0xFFF4F6FB).copy(alpha = 0.55f),
-                    Color(0xFFF4F6FB).copy(alpha = 0f)
-                ),
-                startY = 0f,
-                endY = size.height * 0.3f
-            )
-        )
-    }) {
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF4F6FB))) {
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -244,10 +232,19 @@ fun HomeScreen(
         }
 
         // ── 磨砂顶部标题栏（冻结，半透明，让底层卡片若隐若现）──
-        // ── 磨砂顶部标题栏（Box 已提供渐变底，这里透明叠加）──
+        // ── 渐变磨砂顶部标题栏（顶部实色保护文字，底部渐透让卡片若隐若现）──
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFFF4F6FB).copy(alpha = 0.92f),
+                            Color(0xFFF4F6FB).copy(alpha = 0.55f),
+                            Color(0xFFF4F6FB).copy(alpha = 0f)
+                        )
+                    )
+                )
                 .padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 4.dp)
         ) {
             Text("财迹FinTrace", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B), lineHeight = 19.sp)
