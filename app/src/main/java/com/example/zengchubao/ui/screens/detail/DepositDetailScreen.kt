@@ -515,7 +515,7 @@ fun EarlyWithdrawalSheet(
         ) {
             // 标题栏（与存单详情头部一致风格）
             Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 20.dp, top = 8.dp, bottom = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 20.dp, top = 44.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
