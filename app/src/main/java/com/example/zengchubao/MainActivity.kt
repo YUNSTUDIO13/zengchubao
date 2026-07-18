@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.auto(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT)
         )
+        window.statusBarColor = AndroidColor.TRANSPARENT
         NotificationHelper.initChannel(this@MainActivity)
         setContent {
             ZengChuBaoTheme {
