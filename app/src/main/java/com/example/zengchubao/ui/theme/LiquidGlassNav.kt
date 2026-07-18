@@ -74,7 +74,7 @@ fun BottomNavBar(
                 ) {
                     val tabCount = AppTab.entries.size
                     val tabWidth = maxWidth / tabCount
-                    val indicatorHorizontalPadding = 4.dp
+                    val indicatorHorizontalPadding = 0.dp
                     val indicatorWidth = tabWidth - indicatorHorizontalPadding * 2
                     val selectedIndex = AppTab.entries.indexOf(currentTab)
 
