@@ -15,11 +15,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import android.os.Build
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -113,7 +111,7 @@ fun HomeScreen(
             state = listState,
             modifier = Modifier
                 .fillMaxSize(),
-            contentPadding = PaddingValues(top = 52.dp, bottom = 90.dp)
+            contentPadding = PaddingValues(top = 44.dp, bottom = 90.dp)
         ) {
             // ── Hero 卡片 ──
             item {
@@ -233,15 +231,12 @@ fun HomeScreen(
             }
         }
 
-        // ── 磨砂顶部标题栏（冻结，半透明 + 高斯模糊）──
+        // ── 磨砂顶部标题栏（冻结，半透明，让底层卡片若隐若现）──
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(
-                    if (Build.VERSION.SDK_INT >= 31) Modifier.blur(12.dp) else Modifier
-                )
-                .background(Color(0xFFF4F6FB).copy(alpha = 0.7f))
-                .padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 4.dp)
+                .background(Color(0xFFF4F6FB).copy(alpha = 0.65f))
+                .padding(start = 18.dp, end = 18.dp, top = 8.dp, bottom = 4.dp)
         ) {
             Text("财迹FinTrace", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B), lineHeight = 19.sp)
             Spacer(Modifier.height(2.dp))
