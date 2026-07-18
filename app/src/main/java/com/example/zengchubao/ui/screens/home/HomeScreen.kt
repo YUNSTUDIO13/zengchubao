@@ -14,9 +14,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import android.os.Build
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -104,15 +106,12 @@ fun HomeScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF4F6FB))) {
-        // ── 顶部标题栏（新建按钮已移至 tab 栏最右侧）──
-        Column(modifier = Modifier.padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 4.dp)) {
-            Text("财迹FinTrace", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B), lineHeight = 19.sp)
-            Spacer(Modifier.height(2.dp))
-            Text("跨行存单，一览全迹", fontSize = 10.sp, lineHeight = 10.sp, color = Color(0xFF94A3B8))
-        }
-
-        LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 90.dp)) {
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF4F6FB))) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentPadding = PaddingValues(top = 52.dp, bottom = 90.dp)
+        ) {
             // ── Hero 卡片 ──
             item {
                 Box(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp).fillMaxWidth()
@@ -229,6 +228,21 @@ fun HomeScreen(
                         modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 7.dp))
                 }
             }
+        }
+
+        // ── 磨砂顶部标题栏（冻结，半透明 + 高斯模糊）──
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (Build.VERSION.SDK_INT >= 31) Modifier.blur(12.dp) else Modifier
+                )
+                .background(Color(0xFFF4F6FB).copy(alpha = 0.7f))
+                .padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 4.dp)
+        ) {
+            Text("财迹FinTrace", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B), lineHeight = 19.sp)
+            Spacer(Modifier.height(2.dp))
+            Text("跨行存单，一览全迹", fontSize = 10.sp, lineHeight = 10.sp, color = Color(0xFF94A3B8))
         }
     }
 }
