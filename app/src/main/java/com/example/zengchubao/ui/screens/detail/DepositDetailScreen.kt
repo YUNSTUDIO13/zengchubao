@@ -83,12 +83,39 @@ fun DepositDetailScreen(
 
     Scaffold(
         topBar = {
-            Row(modifier = Modifier.padding(start = 4.dp, top = 44.dp, bottom = 8.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 4.dp, end = 20.dp, top = 44.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
                     Icon(Icons.Filled.ArrowBack, "返回", tint = Gray700, modifier = Modifier.size(20.dp))
                 }
-                Text("存单详情", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Gray900,
-                    modifier = Modifier.align(Alignment.CenterVertically))
+                Text("存单详情", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Gray900)
+                Spacer(Modifier.weight(1f))
+                // 银行名称 + 状态标签（半尺寸，右对齐）
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Surface(shape = RoundedCornerShape(999.dp), color = BrandBlueBg,
+                        border = BorderStroke(0.5.dp, Color(0xFFE2E8F0))) {
+                        Text(deposit.bankName, fontSize = 10.sp, fontWeight = FontWeight.Medium,
+                            color = BrandBlue, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    }
+                    val (statusLabel, statusBg, statusColor) = when (deposit.status) {
+                        DepositStatus.HOLDING -> Triple("持有中", EmeraldBg, EmeraldText)
+                        DepositStatus.MATURED -> Triple("已到期", RedBg, Red500)
+                        DepositStatus.EARLY_WITHDRAWN -> Triple("已支取", AmberBg, Amber600)
+                        DepositStatus.ARCHIVED -> Triple("已归档", Gray100, Gray500)
+                    }
+                    Surface(shape = RoundedCornerShape(999.dp), color = statusBg,
+                        border = BorderStroke(0.5.dp, Color(0xFFE2E8F0))) {
+                        Text(statusLabel, fontSize = 10.sp, fontWeight = FontWeight.SemiBold,
+                            color = statusColor, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    }
+                }
             }
         },
         containerColor = BgPage
@@ -100,42 +127,7 @@ fun DepositDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
         ) {
-            // ── 标签行 ──
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Surface(shape = RoundedCornerShape(999.dp), color = BrandBlueBg,
-                    border = BorderStroke(0.6.dp, Color(0xFFE2E8F0))) {
-                    Text(deposit.bankName, fontSize = 12.sp, fontWeight = FontWeight.Medium,
-                        color = BrandBlue, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
-                }
-                val typeLabel = when (deposit.productType) {
-                    ProductType.FIXED_DEPOSIT -> "定期存款"
-                    ProductType.WEALTH_MGMT -> "理财产品"
-                    ProductType.OTHER -> "其他"
-                }
-                Surface(shape = RoundedCornerShape(999.dp), color = Gray100,
-                    border = BorderStroke(0.6.dp, Color(0xFFE2E8F0))) {
-                    Text(typeLabel, fontSize = 12.sp, fontWeight = FontWeight.Medium,
-                        color = Gray500, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
-                }
-                Spacer(Modifier.weight(1f))
-                // 状态标签
-                val (statusLabel, statusBg, statusColor) = when (deposit.status) {
-                    DepositStatus.HOLDING -> Triple("持有中", EmeraldBg, EmeraldText)
-                    DepositStatus.MATURED -> Triple("已到期", RedBg, Red500)
-                    DepositStatus.EARLY_WITHDRAWN -> Triple("已支取", AmberBg, Amber600)
-                    DepositStatus.ARCHIVED -> Triple("已归档", Gray100, Gray500)
-                }
-                Surface(shape = RoundedCornerShape(999.dp), color = statusBg,
-                    border = BorderStroke(0.6.dp, Color(0xFFE2E8F0))) {
-                    Text(statusLabel, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-                        color = statusColor, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
-                }
-            }
-
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(8.dp))
 
             // ── Hero：渐变卡片（参照首页hero）──
             Box(
@@ -150,15 +142,11 @@ fun DepositDetailScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(deposit.productName, fontSize = 11.sp, fontWeight = FontWeight.W500,
+                        Text(deposit.productName, fontSize = 13.sp, fontWeight = FontWeight.W500,
                             color = Color(0x73FFFFFF))
                         Spacer(Modifier.height(4.dp))
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text("¥", fontSize = 14.sp, fontWeight = FontWeight.Light,
-                                color = Color(0xFFE8B254), modifier = Modifier.padding(bottom = 6.dp))
-                            Text(fmt(deposit.principal), fontSize = 30.sp, fontWeight = FontWeight.Bold,
-                                color = Color.White, letterSpacing = (-0.5).sp)
-                        }
+                        Text(fmt(deposit.principal), fontSize = 30.sp, fontWeight = FontWeight.Bold,
+                            color = Color.White, letterSpacing = (-0.5).sp)
                     }
                     if (deposit.status == DepositStatus.HOLDING && totalDays > 0) {
                         DaysRing(daysLeft = remainingDays.coerceAtLeast(0), totalDays = totalDays)
@@ -527,13 +515,12 @@ fun EarlyWithdrawalSheet(
         ) {
             // 标题栏（与存单详情头部一致风格）
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 20.dp, top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
                     Icon(Icons.Filled.ArrowBack, "关闭", tint = Gray700, modifier = Modifier.size(20.dp))
                 }
-                Spacer(Modifier.width(4.dp))
                 Text("提前支取模拟器", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Gray900)
             }
 

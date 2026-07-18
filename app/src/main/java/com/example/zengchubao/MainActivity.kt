@@ -247,9 +247,9 @@ fun ZengChuBaoApp() {
                             storage = storage,
                             onSave = {
                                 scope.launch { refreshData() }
-                                currentScreen = Screen.Main
+                                currentScreen = Screen.DepositDetail(editId)
                             },
-                            onCancel = { currentScreen = Screen.Main },
+                            onCancel = { currentScreen = Screen.DepositDetail(editId) },
                             onBanksChanged = { banks = it },
                             onProductsChanged = { products = it }
                         )
