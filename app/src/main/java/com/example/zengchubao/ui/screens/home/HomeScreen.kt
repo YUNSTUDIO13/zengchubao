@@ -111,7 +111,7 @@ fun HomeScreen(
             state = listState,
             modifier = Modifier
                 .fillMaxSize(),
-            contentPadding = PaddingValues(top = 52.dp, bottom = 90.dp)
+            contentPadding = PaddingValues(top = 55.dp, bottom = 90.dp)
         ) {
             // ── Hero 卡片 ──
             item {
