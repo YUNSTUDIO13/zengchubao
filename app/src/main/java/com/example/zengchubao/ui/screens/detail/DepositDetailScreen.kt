@@ -509,7 +509,6 @@ fun EarlyWithdrawalSheet(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp)
                 .padding(bottom = 32.dp)
         ) {
             // 标题栏（与存单详情头部一致风格）
@@ -523,6 +522,8 @@ fun EarlyWithdrawalSheet(
                 Text("提前支取模拟器", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Gray900)
             }
 
+            // 内容区域统一 20dp 水平间距
+            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
             Text("传统标准：定期存款提前支取部分一律按支取日活期挂牌利率计息，采用实际天数计算。算头不算尾。",
                 fontSize = 12.sp, color = Gray400, lineHeight = 18.sp)
 
@@ -609,6 +610,7 @@ fun EarlyWithdrawalSheet(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = BrandBlue)
                 ) { Text("确认支取", fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
+            }
             }
         }
     }
