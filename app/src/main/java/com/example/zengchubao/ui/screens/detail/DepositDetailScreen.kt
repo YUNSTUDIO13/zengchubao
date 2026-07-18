@@ -504,7 +504,6 @@ fun EarlyWithdrawalSheet(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .statusBarsPadding()
     ) {
         Column(
             modifier = Modifier
