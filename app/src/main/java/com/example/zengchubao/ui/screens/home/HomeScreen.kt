@@ -337,12 +337,11 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
 
         Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            verticalArrangement = Arrangement.spacedBy(0.dp)) {
 
             // ══ L1: 产品名（左） | +¥利息 · ¥本金（右，底部基线对齐） ══
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -355,10 +354,10 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
                 }
                 Spacer(Modifier.weight(1f))
                 Text("+¥${CN_INT.format(interestAmount)}", fontSize = 8.sp, fontWeight = FontWeight.Bold,
-                    color = Color(0xFFDC2626))
+                    color = Color(0xFFDC2626), modifier = Modifier.alignByBaseline())
                 Spacer(Modifier.width(6.dp))
                 Text("¥${CN_INT.format(deposit.principal)}", fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E293B))
+                    color = Color(0xFF1E293B), modifier = Modifier.alignByBaseline())
             }
 
             // ══ L2: 银行 · 利率（左） | 倒计时（右） ══
