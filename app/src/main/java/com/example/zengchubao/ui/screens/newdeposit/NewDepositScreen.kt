@@ -276,7 +276,7 @@ fun NewDepositScreen(
                     }
                     Spacer(Modifier.height(12.dp))
                     Row(Modifier.fillMaxWidth()) {
-                        YieldItem("存期", "${selectedTermDays} 天", Modifier.weight(1f))
+                        YieldItem("存期", termDaysToLabel(selectedTermDays), Modifier.weight(1f))
                         YieldItem("年化利率", "${"%.2f".format(rateVal)}%", Modifier.weight(1f))
                     }
                 }
