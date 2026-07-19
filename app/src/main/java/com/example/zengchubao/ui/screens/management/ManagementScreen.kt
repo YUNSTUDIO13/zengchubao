@@ -807,19 +807,23 @@ private fun FormulaCalcScreen(onBack: () -> Unit) {
         FormulaCard(
             title = "计息法",
             formula = "对年对月对日法 · 实际天数法",
-            desc = "对年对月对日法：存期按年×360+月×30+日计算，到期利息÷360×存期天数（TERM_OPTIONS用360进制）\n" +
-                    "实际天数法：存期按日历天数计算，到期利息÷365×实际天数（年化基准365）\n" +
-                    "日收益统一÷365"
+            desc = "对年对月对日法：存期按年×360+月×30+日（30/360银行基准），分母=360\n" +
+                    "实际天数法：存期按实际日历天数（含闰年），分母=365\n" +
+                    "日收益/累计/年预估/到期利息 全线统一按 yearBasis 切换分母"
         )
         FormulaCard(
             title = "日收益",
             formula = "Σ(持有中本金 × 年利率% ÷ yearBasis)",
-            desc = "所有已起息的持有中存单每天产生的利息之和。\nyearBasis：对年对月法=365，实际天数法=360"
+            desc = "yearBasis：对年对月法=360，实际天数法=365\n" +
+                    "仅统计已起息（startDate≤今天）的 HOLDING 存单"
         )
         FormulaCard(
             title = "持有中累计收益",
             formula = "Σ(本金 × 年利率% ÷ yearBasis × 已持有天数)",
-            desc = "从起存日次日起至今天，每笔持有中存单已产生的收益总和。\n已持有天数 = today - 起存日，上限≤存期天数\nyearBasis同日收益规则"
+            desc = "已持有天数 = today − 起存日，上限≤存期天数\n" +
+                    "对年对月法：天数按 30/360 银行基准（整年×360+整月×30）\n" +
+                    "实际天数法：天数按实际日历天数\n" +
+                    "yearBasis 同上：对年对月=360，实际天数=365"
         )
         FormulaCard(
             title = "资产余额",
@@ -829,24 +833,26 @@ private fun FormulaCalcScreen(onBack: () -> Unit) {
         FormulaCard(
             title = "今年预估收益",
             formula = "Σ(本金 × 年利率% ÷ yearBasis × 今年有效天数)",
-            desc = "单笔今年有效天数 = min(12-31, 到期日) − max(1-1, 起存日次日)\n" +
-                    "前年存的→从1月1日起算（全年）\n" +
+            desc = "单笔今年有效天数 = min(12-31, 到期日) − max(1-1, 起存日次日) + 1\n" +
+                    "前年存的→从1月1日起算（含1月1日当天）\n" +
                     "今年新存→从起存日次日起算\n" +
-                    "到期日在今年的→到到期日截止\n" +
-                    "yearBasis同日收益规则"
+                    "对年对月法：天数按 30/360 银行基准\n" +
+                    "实际天数法：天数按实际日历天数\n" +
+                    "yearBasis：对年对月=360，实际天数=365"
         )
         FormulaCard(
             title = "到期总收益",
-            formula = "Σ(本金 × 年利率% ÷ 360 × 存期天数)",
-            desc = "所有持有中存单到期时预计产生的总利息。\n" +
+            formula = "Σ(本金 × 年利率% ÷ yearBasis × 存期天数)",
+            desc = "所有持有中/已到期（非归档）存单到期时预计产生的总利息。\n" +
                     "存期天数 = termDays（对年对月法=年×360+月×30+日，实际天数法=日历天数）\n" +
-                    "分母固定360，符合银行到期计息标准"
+                    "yearBasis：对年对月=360，实际天数=365"
         )
         FormulaCard(
             title = "到期利息（单笔）",
-            formula = "本金 × 年利率% ÷ 360 × termDays",
+            formula = "本金 × 年利率% ÷ yearBasis × termDays",
             desc = "新建存单时的预计到期利息，也是到期总收益明细中每笔的值。\n" +
-                    "对年对月法：整年直接简化为 本金 × 年利率% × 年数"
+                    "对年对月法：整年直接简化为 本金 × 年利率% × 年数\n" +
+                    "实际天数法：含闰年真实日历天数"
         )
         FormulaCard(
             title = "综合年化率（时间加权）",
@@ -855,13 +861,15 @@ private fun FormulaCalcScreen(onBack: () -> Unit) {
         )
         FormulaCard(
             title = "归档历史收益",
-            formula = "Σ(归档存单 maturityAmount − 本金)",
-            desc = "所有已归档存单（ARCHIVED）的实际到期收益之和。\n仅在资产页面中展示，不可点击跳转"
+            formula = "Σ(已归档存单 本金 × 年利率% ÷ yearBasis × 存期天数)",
+            desc = "所有已归档存单（ARCHIVED）的到期利息，动态计算。\n" +
+                    "不再使用存入时的 maturityAmount 快照值。\n" +
+                    "yearBasis：对年对月=360，实际天数=365"
         )
         FormulaCard(
             title = "累计收益（全量）",
-            formula = "持有中 → 持有中累计收益\n已到期/已归档/提前支取 → maturityAmount − 本金",
-            desc = "包含已结算的历史收益 + 当前持仓累计收益。\n非仅持有中，全生命周期统计"
+            formula = "持有中 → 持有中累计收益（动态计算）\n已到期/已归档/提前支取 → 到期利息（动态计算）",
+            desc = "全生命周期统计，所有状态存单统一用动态计算而非 DB 快照值。\n含已结算历史收益 + 当前持仓累计收益"
         )
         FormulaCard(
             title = "累计存入",
@@ -871,12 +879,14 @@ private fun FormulaCalcScreen(onBack: () -> Unit) {
         FormulaCard(
             title = "总资产趋势图",
             formula = "每月末总资产 = 持有中且未到期本金 + 持有中累计收益",
-            desc = "仅统计持有中且 endDate > 当月月末的存单。\n到期存单的本金在该月后不再计入总资产。\n预测月（未来月份）按持有存单照常计算"
+            desc = "仅统计持有中且 endDate > 当月月末的存单。\n持有中累计收益按当月月末节点计算：\n 对年对月法 → 30/360 银行日 ÷ 360\n 实际天数法 → 日历日 ÷ 365\n预测月（未来月份）按持有存单照常计算"
         )
         FormulaCard(
             title = "净利息趋势图",
-            formula = "每月末净利息 = 持有中累计收益 + 到期未归档收益 + 已归档收益",
-            desc = "持有中累计收益 = 按当月月末已持有天数计算\n到期未归档收益 = endDate ≤ 当月月末 的持有中存单到期收益\n已归档收益 = 已归档存单的 maturityAmount − 本金\n预测月按持有存单照常计算"
+            formula = "每月末净利息 = 持有中累计收益 + 已到期未归档收益 + 已到期已归档收益 + 已归档收益",
+            desc = "持有中累计收益 = 按当月月末节点，对年法→银行日÷360，实际天法→日历日÷365\n" +
+                    "已到期/已归档收益 = 动态计算到期利息（不再用 maturityAmount 快照）\n" +
+                    "预测月（未来月份）按持有存单照常计算"
         )
 
         Spacer(Modifier.height(40.dp))
