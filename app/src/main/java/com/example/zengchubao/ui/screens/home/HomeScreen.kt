@@ -241,7 +241,7 @@ fun HomeScreen(
         ) {
             Text("财迹FinTrace", fontSize = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B), lineHeight = 19.sp)
             Spacer(Modifier.height(2.dp))
-            Text("跨行存单，一览全迹", fontSize = 10.sp, lineHeight = 12.sp, lineHeight = 10.sp, color = Color(0xFF94A3B8))
+            Text("跨行存单，一览全迹", fontSize = 10.sp, lineHeight = 10.sp, color = Color(0xFF94A3B8))
         }
     }
 }
