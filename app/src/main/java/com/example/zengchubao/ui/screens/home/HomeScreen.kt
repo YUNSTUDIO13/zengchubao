@@ -226,7 +226,7 @@ fun HomeScreen(
             } else {
                 items(filteredList, key = { it.id }) { deposit ->
                     RefDepositCard(deposit = deposit, onClick = { onDepositClick(deposit.id) },
-                        modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 7.dp))
+                        modifier = Modifier.padding(start = 18.dp, end = 18.dp, bottom = 9.dp))
                 }
             }
         }
