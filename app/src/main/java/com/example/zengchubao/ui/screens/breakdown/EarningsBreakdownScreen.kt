@@ -29,10 +29,10 @@ private val CN_INT = NumberFormat.getNumberInstance(Locale.CHINA).apply { minimu
 private val CN_2 = NumberFormat.getNumberInstance(Locale.CHINA).apply { minimumFractionDigits = 2; maximumFractionDigits = 2 }
 
 enum class BreakdownMode(val title: String, val metricLabel: String) {
-    DAILY("日收益明细", "日利息"),
-    ANNUAL("今年预估收益明细", "今年预估收益"),
-    ACCUMULATED("累计收益明细", "历史已累计收益"),
-    MATURITY("到期总收益明细", "到期利息")
+    DAILY("日收益", "日利息"),
+    ANNUAL("今年预估收益", "今年预估收益"),
+    ACCUMULATED("累计收益", "历史已累计收益"),
+    MATURITY("到期总收益", "到期利息")
 }
 
 @Composable
