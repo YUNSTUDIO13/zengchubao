@@ -359,18 +359,22 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
                     color = Color(0xFF1E293B))
             }
 
-            // ══ L2: 银行 · 利率 · 倒计时（左） | 利息（右） ══
+            // ══ L2: 银行 · 利率（左） | 利息 · 倒计时（右） ══
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Bottom
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(deposit.bankName, fontSize = 10.sp, color = Color(0xFF64748B))
                     Text("·", fontSize = 10.sp, color = Color(0xFF94A3B8))
                     Text("${"%.2f".format(deposit.annualRate)}%", fontSize = 10.sp, color = Color(0xFF64748B))
-                    Text("·", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                }
+                Row(verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("+¥${CN_INT.format(interestAmount)}", fontSize = 8.sp, fontWeight = FontWeight.Bold,
+                        color = Color(0xFFDC2626))
                     val countdownText = when {
                         isExpired -> "已过期${-remainingDays}天"
                         remainingDays == 0 -> "今日到期"
@@ -378,8 +382,6 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
                     }
                     Text(countdownText, fontSize = 10.sp, color = dateColor)
                 }
-                Text("+¥${CN_INT.format(interestAmount)}", fontSize = 10.sp, fontWeight = FontWeight.Bold,
-                    color = Color(0xFFDC2626))
             }
         }
     }
