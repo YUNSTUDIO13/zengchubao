@@ -69,7 +69,7 @@ fun MonthPickerScreen(
                         YearHeader(year = y,
                             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp))
                     }
-                    val allMonths = byYear[y]?.sortedByDescending { it.second } ?: emptyList()
+                    val allMonths = byYear[y]?.sortedBy { it.second } ?: emptyList()
                     val rows = allMonths.chunked(4)
                     rows.forEach { row ->
                         item(key = "row_${y}_${row.firstOrNull()?.second ?: 0}") {
