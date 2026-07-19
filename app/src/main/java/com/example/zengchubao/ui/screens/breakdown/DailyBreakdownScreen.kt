@@ -396,7 +396,8 @@ private fun DayCell(
             ),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Top,
+            modifier = Modifier.padding(top = 6.dp)) {
             Text("$day", fontSize = 13.sp, color = textColor, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium)
             if (hasIncome || isSelected) {
                 Spacer(Modifier.height(1.dp))
