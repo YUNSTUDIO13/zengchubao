@@ -269,7 +269,6 @@ fun PillChip(label: String, selected: Boolean, onClick: () -> Unit) {
         modifier = Modifier
             .clip(shape)
             .background(if (selected) Color(0xFF1E293B) else Color.White)
-            .border(1.dp, if (selected) Color(0xFF1E293B) else Color(0xFFE2E8F0), shape)
             .clickable { onClick() }
             .padding(horizontal = 13.dp, vertical = 5.dp)
     ) {
@@ -287,7 +286,6 @@ fun TimePillChip(label: String, selected: Boolean, activeTextColor: Color, onCli
         modifier = Modifier
             .clip(shape)
             .background(if (selected) Color(0xFF1E293B) else Color.White)
-            .border(1.dp, if (selected) Color(0xFF1E293B) else Color(0xFFE2E8F0), shape)
             .clickable { onClick() }
             .padding(horizontal = 10.dp, vertical = 0.dp)
     ) {

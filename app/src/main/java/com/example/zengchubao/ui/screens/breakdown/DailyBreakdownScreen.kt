@@ -446,7 +446,7 @@ private fun DayCell(
     }
     Box(
         modifier = modifier
-            .height(52.dp)
+            .requiredHeight(52.dp)
             .padding(2.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(bgColor)

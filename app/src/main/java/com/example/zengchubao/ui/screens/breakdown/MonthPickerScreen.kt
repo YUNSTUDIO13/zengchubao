@@ -83,7 +83,7 @@ private fun YearHeader(year: Int, isCurrent: Boolean, modifier: Modifier = Modif
         color = Color(0xFF2563EB),
         modifier = modifier
             .let { if (isCurrent) it.background(Color(0xFFEFF6FF), RoundedCornerShape(999.dp))
-                .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(999.dp))
+                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(999.dp))
                 .padding(horizontal = 12.dp, vertical = 2.dp) else it })
 }
 
@@ -113,7 +113,7 @@ private fun MonthRow(
                 if (isCurrent) {
                     Text("当前", fontSize = 9.sp, color = Color(0xFF2563EB), fontWeight = FontWeight.Medium,
                         modifier = Modifier.background(Color(0xFFEFF6FF), RoundedCornerShape(999.dp))
-                            .border(1.dp, Color(0xFFCBD5E1), RoundedCornerShape(999.dp))
+                            .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(999.dp))
                             .padding(horizontal = 8.dp, vertical = 2.dp))
                 }
             }
