@@ -55,9 +55,8 @@ fun EarningsBreakdownScreen(
     }
 
     fun metricValue(dep: Deposit): Double {
-        val basis = yearBasis(dep.calcMethod).toDouble()
         return when (mode) {
-            BreakdownMode.DAILY -> dep.principal * (dep.annualRate / 100.0) / basis
+            BreakdownMode.DAILY -> dep.principal * (dep.annualRate / 100.0) / 365.0
             BreakdownMode.ANNUAL -> {
                 val today = todayString()
                 val yearStart = "${today.take(4)}-01-01"
@@ -65,12 +64,12 @@ fun EarningsBreakdownScreen(
                 val start = if (dep.startDate > yearStart) addDays(dep.startDate, 1) else yearStart
                 val end = if (dep.endDate < yearEnd) dep.endDate else yearEnd
                 if (start >= end) 0.0
-                else dep.principal * (dep.annualRate / 100.0) / basis * (daysBetween(start, end) + 1)
+                else dep.principal * (dep.annualRate / 100.0) / 365.0 * (daysBetween(start, end) + 1)
             }
             BreakdownMode.ACCUMULATED -> {
                 val today = todayString()
                 val elapsed = maxOf(0, minOf(daysBetween(dep.startDate, today), dep.termDays))
-                dep.principal * (dep.annualRate / 100.0) / basis * elapsed
+                dep.principal * (dep.annualRate / 100.0) / 365.0 * elapsed
             }
             BreakdownMode.MATURITY -> {
                 dep.principal * (dep.annualRate / 100.0) * (dep.termDays.toDouble() / 360.0)

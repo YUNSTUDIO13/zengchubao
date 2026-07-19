@@ -6,8 +6,12 @@ import kotlinx.datetime.*
 const val DAYS_PER_MONTH = 30
 const val DAYS_PER_YEAR = 360
 
-/** 根据计息法返回年基准天数：对年对月→365，实际天数→365 */
-fun yearBasis(calcMethod: CalcMethod): Int = 365
+/** 到期利息计算用：对年对月→360(TERM_OPTIONS用360进制)，实际天数→365 */
+fun yearBasis(calcMethod: CalcMethod): Int =
+    if (calcMethod == CalcMethod.ANNUAL_MATCH) 360 else 365
+
+/** 每日收益计算用：统一365天基准 */
+private const val DAILY_BASIS = 365
 
 // ── 获取今天日期字符串 ──
 fun todayString(): String {
@@ -121,7 +125,7 @@ fun calculateAccruedInterest(
 ): Double {
     val today = todayString()
     val elapsed = maxOf(0, minOf(daysBetween(startDate, today), termDays))
-    return principal * (annualRate / 100.0) * (elapsed.toDouble() / yearBasis(calcMethod).toDouble())
+    return principal * (annualRate / 100.0) * (elapsed.toDouble() / 365.0)
 }
 
 // ── 提前支取计息（传统标准：活期利率 × 实际天数） ──
@@ -210,7 +214,7 @@ fun calculateAnnualExpectedYield(deposits: List<Deposit>): Double {
             val end = if (dep.endDate < yearEnd) dep.endDate else yearEnd
             if (start >= end) return@sumOf 0.0
             val days = daysBetween(start, end) + 1
-            dep.principal * (dep.annualRate / 100.0) / yearBasis(dep.calcMethod).toDouble() * days
+            dep.principal * (dep.annualRate / 100.0) / 365.0 * days
         }
 }
 

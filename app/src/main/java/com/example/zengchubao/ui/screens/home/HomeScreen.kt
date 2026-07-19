@@ -96,7 +96,7 @@ fun HomeScreen(
     val dailyYield: Double = remember(bankFiltered) {
         val today = todayString()
         bankFiltered.filter { it.startDate <= today }
-            .sumOf { it.principal * (it.annualRate / 100.0) / yearBasis(it.calcMethod).toDouble() }
+            .sumOf { it.principal * (it.annualRate / 100.0) / 365.0 }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
