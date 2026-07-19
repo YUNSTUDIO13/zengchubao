@@ -281,7 +281,7 @@ private fun CalendarPager(
         }
     }
 
-    HorizontalPager(state = pagerState, modifier = modifier) { page ->
+    HorizontalPager(state = pagerState, pageSpacing = 16.dp, modifier = modifier) { page ->
         val diff = page - 500
         var y = todayYear + diff / 12
         var m = todayMonth + diff % 12
@@ -399,9 +399,11 @@ private fun CalendarCard(
             cells.add(Triple(i, date, false))
         }
 
-        for (row in 0 until 6) {
-            Row(modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        // 6 行固定 + 行间 2dp 缝隙
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            for (row in 0 until 6) {
+                Row(modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 for (col in 0 until 7) {
                     val idx = row * 7 + col
                     val (d, date, isCurrent) = cells[idx]
@@ -421,6 +423,7 @@ private fun CalendarCard(
                         modifier = Modifier.weight(1f)
                     )
                 }
+            }
             }
         }
     }
