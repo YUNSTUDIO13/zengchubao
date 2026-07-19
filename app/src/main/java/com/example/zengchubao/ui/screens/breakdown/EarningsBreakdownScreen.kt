@@ -46,8 +46,7 @@ fun EarningsBreakdownScreen(
         return
     }
     val holding = remember(deposits, mode) {
-        deposits.filter { it.status == DepositStatus.HOLDING || it.status == DepositStatus.MATURED }
-            .sortedBy { it.endDate }
+        deposits.sortedBy { it.endDate }
     }
 
     fun metricValue(dep: Deposit): Double {
@@ -118,10 +117,12 @@ private fun BreakdownDepositCard(
     modifier: Modifier = Modifier
 ) {
     val remainingDays = daysUntilMaturity(deposit.endDate)
+    val isArchived = deposit.status == DepositStatus.ARCHIVED
     val isExpired = deposit.status == DepositStatus.MATURED || remainingDays < 0
     val isExpiringSoon = remainingDays in 0..30
 
     val dateColor = when {
+        isArchived -> Color(0xFF94A3B8)
         isExpired -> Color(0xFFF87171)
         isExpiringSoon -> Color(0xFFF59E0B)
         else -> Color(0xFF94A3B8)
@@ -173,6 +174,7 @@ private fun BreakdownDepositCard(
             ) {
                 Text("${deposit.startDate} ~ ${deposit.endDate}", fontSize = 10.sp, lineHeight = 12.sp, color = Color(0xFF94A3B8))
                 val countdownText = when {
+                    isArchived -> "已归档"
                     isExpired -> "已过期${-remainingDays}天"
                     isExpiringSoon -> "${remainingDays}天后到期"
                     remainingDays == 0 -> "今日到期"

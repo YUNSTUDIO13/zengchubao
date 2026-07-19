@@ -34,7 +34,7 @@ fun MonthPickerScreen(
     onBack: () -> Unit,
     onSelect: (Int, Int) -> Unit
 ) {
-    val allDeposits = remember(deposits) { deposits.filter { it.status != DepositStatus.ARCHIVED } }
+    val allDeposits = remember(deposits) { deposits }
     val activeMonths = remember(allDeposits) { collectActiveMonths(allDeposits) }
     val byYear = activeMonths.groupBy { it.first }
     val years = activeMonths.map { it.first }.distinct().sortedDescending()
