@@ -447,19 +447,19 @@ private fun DayCell(
     Box(
         modifier = modifier
             .requiredHeight(52.dp)
-            .padding(2.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(bgColor)
             .border(0.5.dp, bgColor, RoundedCornerShape(8.dp))
             .clickable { onClick() }
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 4.dp)) {
-            Text("$day", fontSize = 12.sp, color = textColor,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()) {
+            Text("$day", fontSize = 12.sp, lineHeight = 13.sp, color = textColor,
                 fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Medium)
             if (isCurrentMonth && (hasIncome || isSelected)) {
                 Spacer(Modifier.height(2.dp))
-                Text(if (hasIncome) "+${CN_2.format(income)}" else "+0", fontSize = 8.sp,
+                Text(if (hasIncome) "+${CN_2.format(income)}" else "+0", fontSize = 8.sp, lineHeight = 9.sp,
                     color = incomeColor,
                     fontWeight = FontWeight.SemiBold, maxLines = 1)
             }
