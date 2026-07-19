@@ -337,7 +337,7 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
 
         Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            verticalArrangement = Arrangement.spacedBy(4.dp)) {
 
             // ══ L1: 产品名（左） | ¥本金（右） ══
             Row(
