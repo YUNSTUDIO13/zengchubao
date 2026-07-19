@@ -336,8 +336,8 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
 
-        Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)) {
 
             // ══ L1: 产品名 + Badge | ¥本金 ══
             Row(
