@@ -304,7 +304,6 @@ private fun StatMiniCard(title: String, value: String, selected: Boolean = false
     val borderColor = if (selected) Color(0xFF1E293B) else Color(0xFFE2E8F0)
     Card(modifier = modifier, shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, borderColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         onClick = onClick ?: {}) {
         Column(Modifier.padding(2.dp).fillMaxWidth(),

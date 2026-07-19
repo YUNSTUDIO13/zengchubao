@@ -103,7 +103,6 @@ private fun MonthRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(Color.White)
-            .border(0.5.dp, Color(0xFFE2E8F0), RoundedCornerShape(14.dp))
             .clickable { onClick() }
             .padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 10.dp)
     ) {

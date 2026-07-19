@@ -315,7 +315,6 @@ private fun CalendarCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .background(Color.White)
-            .border(0.6.dp, Color(0xFFE2E8F0), RoundedCornerShape(20.dp))
             .padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 14.dp)
     ) {
         // 顶部：左右箭头 + 年月标题 + 月合计
