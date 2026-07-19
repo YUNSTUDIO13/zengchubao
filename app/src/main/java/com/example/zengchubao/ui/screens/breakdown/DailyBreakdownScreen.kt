@@ -345,10 +345,11 @@ private fun CalendarCard(
                 Icon(Icons.Filled.ChevronLeft, "上月", tint = Color.White, modifier = Modifier.size(18.dp))
             }
             Column(modifier = Modifier.weight(1f).clickable { onTapYearMonth() },
-                horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("${year}年${month}月", fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("${year}年${month}月", fontSize = 18.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold,
                     color = Color(0xFF1E293B), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                Text("月合计 +¥${CN_2.format(monthly.monthTotal)}", fontSize = 10.sp,
+                Text("月合计 +¥${CN_2.format(monthly.monthTotal)}", fontSize = 10.sp, lineHeight = 11.sp,
                     color = Color(0xFFDC2626), fontWeight = FontWeight.SemiBold,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             }

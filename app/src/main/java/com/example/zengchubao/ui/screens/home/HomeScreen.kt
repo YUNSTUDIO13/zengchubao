@@ -336,7 +336,8 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
 
-        Column(Modifier.fillMaxWidth().padding(start = 10.dp, end = 10.dp, top = 8.dp, bottom = 8.dp)) {
+        Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)) {
 
             // ══ L1: 产品名 + Badge | ¥本金 ══
             Row(
@@ -360,7 +361,7 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
 
             // ══ L2: 银行名称 · 利率图标 利率 | 到期利息 ══
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -382,7 +383,7 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
 
             // ══ L3: 起止日期（左） | xx天后到期（右） ══
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 3.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
