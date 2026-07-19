@@ -65,24 +65,34 @@ private fun computeMonthlyData(deposits: List<Deposit>, year: Int): List<MonthDa
         }
         val holdingPrincipal = activeHolding.sumOf { it.principal }
         val holdingAccrued = activeHolding.sumOf {
-            val elapsed = maxOf(0, minOf(daysBetween(it.startDate, monthEnd), it.termDays))
-            it.principal * (it.annualRate / 100.0) * (elapsed.toDouble() / yearBasis(it.calcMethod))
+            val dayCount = if (it.calcMethod == CalcMethod.ANNUAL_MATCH) {
+                maxOf(0, minOf(daysBetweenBankingStyle(it.startDate, monthEnd), it.termDays))
+            } else {
+                val elapsed = maxOf(0, minOf(daysBetween(it.startDate, monthEnd), it.termDays))
+                elapsed
+            }
+            it.principal * (it.annualRate / 100.0) * (dayCount.toDouble() / yearBasis(it.calcMethod))
         }
 
-        // 已到期但未归档的存单（到期后不再计入资产，但收益已锁定）
+        // 已到期（含MATURED）存单的到期利息（动态算，不用DB值）
+        val maturedYield = deposits
+            .filter { it.status != DepositStatus.ARCHIVED && it.status != DepositStatus.HOLDING && it.endDate <= monthEnd }
+            .sumOf { calculateMaturityInterest(it.principal, it.annualRate, it.termDays, it.calcMethod) }
+
+        // 仍HOLDING但已过到期日的存单到期利息
         val maturedHoldingYield = deposits
             .filter { it.status == DepositStatus.HOLDING && it.endDate <= monthEnd }
-            .sumOf { it.maturityAmount - it.principal }
+            .sumOf { calculateMaturityInterest(it.principal, it.annualRate, it.termDays, it.calcMethod) }
 
         // 已归档存单的到期收益
         val archivedYield = deposits
-            .filter { it.status != DepositStatus.HOLDING && it.endDate <= monthEnd }
-            .sumOf { it.maturityAmount - it.principal }
+            .filter { it.status == DepositStatus.ARCHIVED && it.endDate <= monthEnd }
+            .sumOf { calculateMaturityInterest(it.principal, it.annualRate, it.termDays, it.calcMethod) }
 
         result.add(
             MonthData(
                 totalAssets = holdingPrincipal + holdingAccrued,
-                netProfit = holdingAccrued + maturedHoldingYield + archivedYield
+                netProfit = holdingAccrued + maturedYield + maturedHoldingYield + archivedYield
             )
         )
     }
