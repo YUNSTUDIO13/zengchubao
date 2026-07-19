@@ -289,7 +289,7 @@ fun TimePillChip(label: String, selected: Boolean, activeTextColor: Color, onCli
             .clickable { onClick() }
             .padding(horizontal = 10.dp, vertical = 0.dp)
     ) {
-        Text(label, fontSize = 10.sp, lineHeight = 12.sp, fontWeight = FontWeight.W600,
+        Text(label, fontSize = 10.sp, fontWeight = FontWeight.W600,
             color = if (selected) Color.White else activeTextColor)
     }
 }
@@ -337,7 +337,7 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
 
         Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            verticalArrangement = Arrangement.spacedBy(6.dp)) {
 
             // ══ L1: 产品名 + Badge | ¥本金 ══
             Row(
