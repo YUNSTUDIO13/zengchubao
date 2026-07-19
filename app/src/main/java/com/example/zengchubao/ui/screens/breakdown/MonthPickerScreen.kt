@@ -50,6 +50,10 @@ fun MonthPickerScreen(
             }
             Text("选择月份", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B),
                 modifier = Modifier.weight(1f))
+            Text("本月", fontSize = 12.sp, color = Color(0xFF2563EB),
+                modifier = Modifier.clickable {
+                    onSelect(todayString().substring(0,4).toInt(), todayString().substring(5,7).toInt())
+                })
         }
 
         if (activeMonths.isEmpty()) {
@@ -102,14 +106,17 @@ private fun MonthCard(
         modifier = modifier
             .requiredHeight(52.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isCurrent) Color(0xFFEFF6FF) else Color(0xFFFAFBFC))
+            .background(Color(0xFFFAFBFC))
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(vertical = 6.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Text("${month}月", fontSize = 12.sp, fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
                 color = if (isCurrent) Color(0xFF2563EB) else Color(0xFF1E293B))
-            Spacer(Modifier.height(2.dp))
             Text("+¥${CN_2.format(monthly.monthTotal)}", fontSize = 8.sp, lineHeight = 9.sp,
                 color = Color(0xFFDC2626), fontWeight = FontWeight.SemiBold, maxLines = 1)
         }

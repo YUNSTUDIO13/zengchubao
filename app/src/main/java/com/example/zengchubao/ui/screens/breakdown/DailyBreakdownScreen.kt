@@ -148,7 +148,7 @@ fun DailyBreakdownScreen(
             IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回", tint = Color(0xFF1E293B), modifier = Modifier.size(20.dp))
             }
-            Text("日收益明细", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+            Text("日收益", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
         }
 
         LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 90.dp)) {

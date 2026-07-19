@@ -145,9 +145,6 @@ private fun BreakdownDepositCard(
                     Text(deposit.productName, fontSize = 13.sp, lineHeight = 15.sp, fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF1E293B), maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false))
-                    if (isExpiringSoon) {
-                        MiniBadge("即将到期", bg = Color(0xFFFEF3C7), fg = Color(0xFFD97706))
-                    }
                 }
                 Spacer(Modifier.weight(1f))
                 Text("+¥${CN_2.format(metricValue)}", fontSize = 14.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold,
