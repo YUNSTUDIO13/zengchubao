@@ -43,7 +43,7 @@ data class MonthlyIncome(val year: Int, val month: Int, val byDate: Map<String, 
 fun dailyIncomeForDepositOnDate(dep: Deposit, date: String, today: String): Double {
     if (date < dep.startDate || date > dep.endDate) return 0.0
     if (date > today) return 0.0
-    return dep.principal * (dep.annualRate / 100.0) / 365.0
+    return dep.principal * (dep.annualRate / 100.0) / yearBasis(dep.calcMethod).toDouble()
 }
 
 fun buildMonthlyIncome(holding: List<Deposit>, year: Int, month: Int, today: String): MonthlyIncome {

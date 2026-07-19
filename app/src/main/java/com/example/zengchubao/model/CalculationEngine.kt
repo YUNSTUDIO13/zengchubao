@@ -125,7 +125,7 @@ fun calculateAccruedInterest(
 ): Double {
     val today = todayString()
     val elapsed = maxOf(0, minOf(daysBetween(startDate, today), termDays))
-    return principal * (annualRate / 100.0) * (elapsed.toDouble() / 365.0)
+    return principal * (annualRate / 100.0) * (elapsed.toDouble() / yearBasis(calcMethod).toDouble())
 }
 
 // ── 提前支取计息（传统标准：活期利率 × 实际天数） ──
@@ -214,7 +214,7 @@ fun calculateAnnualExpectedYield(deposits: List<Deposit>): Double {
             val end = if (dep.endDate < yearEnd) dep.endDate else yearEnd
             if (start >= end) return@sumOf 0.0
             val days = daysBetween(start, end) + 1
-            dep.principal * (dep.annualRate / 100.0) / 365.0 * days
+            dep.principal * (dep.annualRate / 100.0) / yearBasis(dep.calcMethod).toDouble() * days
         }
 }
 
