@@ -324,7 +324,7 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
     val dateColor = when {
         isExpired -> Color(0xFFF87171)
         isExpiringSoon -> Color(0xFFF59E0B)
-        else -> Color(0xFF94A3B8)
+        else -> Color(0xFF64748B)
     }
     val interestAmount = if (deposit.status == DepositStatus.MATURED)
         deposit.maturityAmount - deposit.principal
@@ -372,11 +372,11 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
                     Text("·", fontSize = 10.sp, color = Color(0xFF94A3B8))
                     Text("${"%.2f".format(deposit.annualRate)}%", fontSize = 10.sp, color = Color(0xFF64748B))
                 }
-                val countdownText = when {
-                    isExpired -> "已过期${-remainingDays}天"
-                    remainingDays == 0 -> "今日到期"
-                    else -> "${remainingDays}天后到期"
-                }
+                    val countdownText = when {
+                        isExpired -> "已过期${-remainingDays}天"
+                        remainingDays == 0 -> "今日到期"
+                        else -> "剩${remainingDays}天"
+                    }
                 Text(countdownText, fontSize = 10.sp, color = dateColor)
             }
         }
