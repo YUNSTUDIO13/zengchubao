@@ -148,7 +148,7 @@ private fun ModuleItem(icon: androidx.compose.ui.graphics.vector.ImageVector, ti
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 3.dp).fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(iconBg),
@@ -206,7 +206,7 @@ private fun DataMgmtScreen(onBack: () -> Unit,
 
         Card(Modifier.padding(horizontal = 16.dp, vertical = 3.dp).fillMaxWidth(), shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)) {
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
             Column {
                 SubListItem(Icons.Outlined.CloudUpload, "数据打包导出", "导出全部存单和配置数据",
                     Color(0xFFEFF6FF), Color(0xFF3B82F6)) {
@@ -261,7 +261,7 @@ private fun BankProductScreen(onBack: () -> Unit, banks: List<Bank>, deposits: L
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 3.dp).fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Column {
                     Row(
@@ -448,7 +448,7 @@ private fun ReminderSettingsScreen(onBack: () -> Unit, settings: AppSettings, on
         Card(Modifier.padding(horizontal = 16.dp, vertical = 3.dp).fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)) {
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
             Column(Modifier.padding(14.dp)) {
                 // ── 开关行 ──
                 Row(
@@ -889,7 +889,7 @@ private fun FormulaCard(title: String, formula: String, desc: String) {
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
