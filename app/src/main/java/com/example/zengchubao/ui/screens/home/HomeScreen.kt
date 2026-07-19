@@ -337,7 +337,7 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
 
         Column(Modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            verticalArrangement = Arrangement.spacedBy(2.dp)) {
 
             // ══ L1: 产品名（左） | ¥本金（右） ══
             Row(
@@ -367,16 +367,16 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(deposit.bankName, fontSize = 8.sp, color = Color(0xFF64748B))
-                    Text("·", fontSize = 8.sp, color = Color(0xFF94A3B8))
-                    Text("${"%.2f".format(deposit.annualRate)}%", fontSize = 8.sp, color = Color(0xFF64748B))
-                    Text("·", fontSize = 8.sp, color = Color(0xFF94A3B8))
+                    Text(deposit.bankName, fontSize = 10.sp, color = Color(0xFF64748B))
+                    Text("·", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                    Text("${"%.2f".format(deposit.annualRate)}%", fontSize = 10.sp, color = Color(0xFF64748B))
+                    Text("·", fontSize = 10.sp, color = Color(0xFF94A3B8))
                     val countdownText = when {
                         isExpired -> "已过期${-remainingDays}天"
                         remainingDays == 0 -> "今日到期"
                         else -> "${remainingDays}天后到期"
                     }
-                    Text(countdownText, fontSize = 8.sp, color = dateColor)
+                    Text(countdownText, fontSize = 10.sp, color = dateColor)
                 }
                 Text("+¥${CN_INT.format(interestAmount)}", fontSize = 10.sp, fontWeight = FontWeight.Bold,
                     color = Color(0xFFDC2626))
