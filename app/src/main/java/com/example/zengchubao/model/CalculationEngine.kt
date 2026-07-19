@@ -66,6 +66,28 @@ fun decomposeTermDays(totalDays: Int): Triple<Int, Int, Int> {
     return Triple(years, months, days)
 }
 
+/**
+ * 银行 30/360 计息法：将日期区间按"整月+整年"重新计算天数
+ * 规则：年按360天，月按30天，超出30天的天数按 整月对齐 削掉大月多余天数
+ * 例：1034实际日历 → 2年10个月0日 = 2×360+10×30+0 = 1020天
+ */
+fun daysBetweenBankingStyle(startDate: String, endDate: String): Int {
+    val start = LocalDate.parse(startDate)
+    val end = LocalDate.parse(endDate)
+    var years = end.year - start.year
+    var months = end.monthNumber - start.monthNumber
+    var days = end.dayOfMonth - start.dayOfMonth
+    if (days < 0) {
+        months -= 1
+        days += 30
+    }
+    if (months < 0) {
+        years -= 1
+        months += 12
+    }
+    return years * DAYS_PER_YEAR + months * DAYS_PER_MONTH + days
+}
+
 // ── 到期日期计算 ──
 
 fun calculateEndDate(startDate: String, termDays: Int, calcMethod: CalcMethod): String {
@@ -124,8 +146,17 @@ fun calculateAccruedInterest(
     calcMethod: CalcMethod
 ): Double {
     val today = todayString()
+    val basis = yearBasis(calcMethod).toDouble()
     val elapsed = maxOf(0, minOf(daysBetween(startDate, today), termDays))
-    return principal * (annualRate / 100.0) * (elapsed.toDouble() / yearBasis(calcMethod).toDouble())
+    val dayCount = if (calcMethod == CalcMethod.ANNUAL_MATCH) {
+        // 对年对月对日：30/360 银行基准，按整月整年重算
+        val bankingDays = daysBetweenBankingStyle(startDate, today)
+        minOf(bankingDays, termDays)
+    } else {
+        // 实际天数法：直接用日历天数
+        elapsed
+    }
+    return principal * (annualRate / 100.0) * (dayCount.toDouble() / basis)
 }
 
 // ── 提前支取计息（传统标准：活期利率 × 实际天数） ──
@@ -213,7 +244,8 @@ fun calculateAnnualExpectedYield(deposits: List<Deposit>): Double {
             val start = if (dep.startDate > yearStart) addDays(dep.startDate, 1) else yearStart
             val end = if (dep.endDate < yearEnd) dep.endDate else yearEnd
             if (start >= end) return@sumOf 0.0
-            val days = daysBetween(start, end) + 1
+            val basis = yearBasis(dep.calcMethod).toDouble()
+            val days = (if (dep.calcMethod == CalcMethod.ANNUAL_MATCH) daysBetweenBankingStyle(start, end) else daysBetween(start, end)) + 1
             dep.principal * (dep.annualRate / 100.0) / yearBasis(dep.calcMethod).toDouble() * days
         }
 }
