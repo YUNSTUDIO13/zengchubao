@@ -45,8 +45,8 @@ fun EarningsBreakdownScreen(
         DailyBreakdownScreen(deposits = deposits, onBack = onBack)
         return
     }
-    val holding = remember(deposits) {
-        deposits.filter { it.status == DepositStatus.HOLDING }
+    val holding = remember(deposits, mode) {
+        deposits.filter { it.status == DepositStatus.HOLDING || it.status == DepositStatus.MATURED }
             .sortedBy { it.endDate }
     }
 
