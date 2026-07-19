@@ -377,8 +377,8 @@ fun RefDepositCard(deposit: Deposit, onClick: () -> Unit, modifier: Modifier = M
                 Row(verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                     WalletIcon(modifier = Modifier.size(10.dp), tint = Color(0xFF1E293B))
-                    Text(CN_INT.format(interestAmount), fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+                    Text("+¥${CN_INT.format(interestAmount)}", fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold, color = Color(0xFFDC2626))
                 }
             }
 
