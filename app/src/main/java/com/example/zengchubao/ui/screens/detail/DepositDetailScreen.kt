@@ -167,7 +167,7 @@ fun DepositDetailScreen(
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                         Text("当前资产余额", fontSize = 11.sp, color = Gray400)
                         Spacer(Modifier.height(4.dp))
-                        Text(fmt(assetBalance), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Gray900)
+                        Text(fmt(assetBalance), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gray900)
                     }
                 }
                 Surface(
@@ -179,7 +179,7 @@ fun DepositDetailScreen(
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                         Text("已累计收益", fontSize = 11.sp, color = Gray400)
                         Spacer(Modifier.height(4.dp))
-                        Text(fmt(accruedInterest), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Gray800)
+                        Text(fmt(accruedInterest), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Gray800)
                     }
                 }
             }

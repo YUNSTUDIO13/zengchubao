@@ -14,6 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,7 +66,7 @@ fun MonthPickerScreen(
             LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 8.dp, bottom = 90.dp)) {
                 years.forEach { y ->
                     item(key = "year_$y") {
-                        YearHeader(year = y, isCurrent = y == initialYear,
+                        YearHeader(year = y,
                             modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 8.dp))
                     }
                     val allMonths = byYear[y]?.sortedByDescending { it.second } ?: emptyList()
@@ -104,32 +106,31 @@ private fun MonthCard(
     val monthly = remember(holding, year, month) { buildMonthlyIncome(holding, year, month, todayString()) }
     Box(
         modifier = modifier
-            .requiredHeight(52.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(Color(0xFFFAFBFC))
-            .clickable { onClick() },
+            .clickable { onClick() }
+            .padding(vertical = 12.dp)
+            .wrapContentHeight(),
         contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(vertical = 6.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text("${month}月", fontSize = 12.sp, fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
-                color = if (isCurrent) Color(0xFF2563EB) else Color(0xFF1E293B))
+                color = if (isCurrent) Color(0xFF2563EB) else Color(0xFF1E293B),
+                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
             Text("+¥${CN_2.format(monthly.monthTotal)}", fontSize = 8.sp, lineHeight = 9.sp,
-                color = Color(0xFFDC2626), fontWeight = FontWeight.SemiBold, maxLines = 1)
+                color = Color(0xFFDC2626), fontWeight = FontWeight.SemiBold, maxLines = 1,
+                style = TextStyle(platformStyle = PlatformTextStyle(includeFontPadding = false)))
         }
     }
 }
 
 @Composable
-private fun YearHeader(year: Int, isCurrent: Boolean, modifier: Modifier = Modifier) {
+private fun YearHeader(year: Int, modifier: Modifier = Modifier) {
     Text("$year",
         fontSize = 15.sp, fontWeight = FontWeight.Bold,
         color = Color(0xFF2563EB),
-        modifier = modifier
-            .let { if (isCurrent) it.background(Color(0xFFEFF6FF), RoundedCornerShape(999.dp))
-                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(999.dp))
-                .padding(horizontal = 12.dp, vertical = 2.dp) else it })
+        modifier = modifier)
 }
